@@ -30,6 +30,10 @@
 	<string>????</string>
 	<key>CFBundleVersion</key>
 	<string>$(FLUTTER_BUILD_NUMBER)</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>Alathar does not record audio. This is required by a text-to-speech component included in the app. لا يسجّل تطبيق الأثر أي صوت.</string>
+	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+	<string>Alathar uses your approximate location only while the app is open, to calculate prayer times. يستخدم الأثر موقعك التقريبي أثناء فتح التطبيق فقط لحساب مواقيت الصلاة.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>Alathar uses your approximate location to calculate prayer times. يستخدم تطبيق الأثر موقعك التقريبي لحساب مواقيت الصلاة.</string>
 	<key>ITSAppUsesNonExemptEncryption</key>
