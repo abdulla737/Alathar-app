@@ -92,8 +92,8 @@ class _AthkarTimeBannerState extends State<AthkarTimeBanner>
   @override
   void initState() {
     super.initState();
-    // Re-checks the time every 30 minutes (also on every rebuild).
-    _timer = Timer.periodic(const Duration(minutes: 30), (_) {
+    // Re-checks the time every 3 minutes (also on every rebuild).
+    _timer = Timer.periodic(const Duration(minutes: 3), (_) {
       if (mounted) setState(() {});
     });
   }
