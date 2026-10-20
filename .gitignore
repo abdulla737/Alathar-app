@@ -50,3 +50,4 @@ app.*.map.json
 # Alathar local files
 build_log.txt
 _to_delete/
+apk/
