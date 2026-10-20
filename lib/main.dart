@@ -20,21 +20,35 @@ Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   // Load saved settings and favorites from the phone before showing the app.
-  await AppSettings.instance.load();
-  await UserStore.instance.load();
-  await ContentStore.instance.load();
-  await PrayerStore.instance.load();
-  WeatherStore.instance.start(); // live weather for the prayer card
-
-  // Connect to Supabase, then check for new content in the background.
-  // The app opens right away with what is already on the phone.
-  await ContentSync.init();
-  unawaited(ContentSync.run());
+  // Each step is time-limited and may fail on its own: the app must always
+  // get past the logo screen, with defaults if something goes wrong.
+  await _step('settings', AppSettings.instance.load);
+  await _step('user', UserStore.instance.load);
+  await _step('content', ContentStore.instance.load);
+  await _step('prayer', PrayerStore.instance.load);
 
   runApp(AlatharApp(showOnboarding: !AppSettings.instance.onboardingDone));
 
+  // Everything below runs after the first screen is showing.
+  try {
+    WeatherStore.instance.start(); // live weather for the prayer card
+  } catch (e) {
+    debugPrint('Weather start failed: $e');
+  }
+  // Connect to Supabase, then check for new content in the background.
+  unawaited(_step('supabase', ContentSync.init, seconds: 10)
+      .then((_) => ContentSync.run()));
   // Phone notifications for the Settings reminders (work with the app closed).
-  unawaited(Reminders.init());
+  unawaited(_step('reminders', Reminders.init, seconds: 20));
+}
+
+/// Runs one start-up step; logs and moves on if it fails or takes too long.
+Future<void> _step(String name, Future<void> Function() run, {int seconds = 5}) async {
+  try {
+    await run().timeout(Duration(seconds: seconds));
+  } catch (e) {
+    debugPrint('Start-up step "$name" skipped: $e');
+  }
 }
 
 class AlatharApp extends StatefulWidget {

@@ -36,6 +36,11 @@ android {
             // TODO: Add your own signing config for the release build.
             // Signing with the debug keys for now, so `flutter run --release` works.
             signingConfig = signingConfigs.getByName("debug")
+            // No code shrinking (R8): it can strip classes that plugins
+            // (notifications, location, Supabase) load at run time, which
+            // leaves the release app stuck on the logo screen.
+            isMinifyEnabled = false
+            isShrinkResources = false
         }
     }
 }
