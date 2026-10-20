@@ -19,7 +19,7 @@ class WeatherNow {
 
 /// Current weather at the prayer place, from Open-Meteo (free, no account
 /// or key: https://open-meteo.com). Fetched when the place is set or
-/// changes, and at most every 30 minutes after that. Without internet the
+/// changes, and at most every 60 minutes after that. Without internet the
 /// prayer card simply shows no weather.
 class WeatherStore extends ChangeNotifier {
   WeatherStore._();
@@ -30,7 +30,7 @@ class WeatherStore extends ChangeNotifier {
   bool _loading = false;
   Timer? _timer;
 
-  static const refreshEvery = Duration(minutes: 30);
+  static const refreshEvery = Duration(minutes: 60);
 
   /// Starts following the prayer place. Call once at startup.
   void start() {

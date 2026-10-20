@@ -31,30 +31,49 @@ Future<void> main() async {
   await ContentSync.init();
   unawaited(ContentSync.run());
 
-  SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
-    statusBarColor: Colors.transparent,
-    statusBarIconBrightness: Brightness.dark,
-  ));
-
   runApp(AlatharApp(showOnboarding: !AppSettings.instance.onboardingDone));
 
   // Phone notifications for the Settings reminders (work with the app closed).
   unawaited(Reminders.init());
 }
 
-class AlatharApp extends StatelessWidget {
+class AlatharApp extends StatefulWidget {
   /// Onboarding shows only on the very first launch.
   final bool showOnboarding;
 
   const AlatharApp({super.key, required this.showOnboarding});
 
   @override
+  State<AlatharApp> createState() => _AlatharAppState();
+}
+
+class _AlatharAppState extends State<AlatharApp> {
+  bool? _builtDark;
+
+  @override
   Widget build(BuildContext context) {
+    final settings = AppSettings.instance;
     // Rebuilds the app with the new locale (and text direction) whenever
-    // the language changes. Arabic is the default.
-    return ValueListenableBuilder<String>(
-      valueListenable: AppSettings.instance.languageNotifier,
-      builder: (context, lang, _) => MaterialApp(
+    // the language changes (Arabic is the default), and in the new colors
+    // when dark mode is switched.
+    return ListenableBuilder(
+      listenable: Listenable.merge([settings.languageNotifier, settings.darkNotifier]),
+      builder: (context, _) {
+        final lang = settings.language;
+        final dark = settings.darkMode;
+        AppColors.isDark = dark;
+        if (_builtDark != null && _builtDark != dark) {
+          // A fresh navigator so every page is built again in the new colors.
+          appNavigatorKey = GlobalKey<NavigatorState>();
+        }
+        _builtDark = dark;
+        SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle(
+          statusBarColor: Colors.transparent,
+          statusBarIconBrightness: dark ? Brightness.light : Brightness.dark,
+          statusBarBrightness: dark ? Brightness.dark : Brightness.light,
+        ));
+        return MaterialApp(
+        key: ValueKey(dark),
         title: 'Alathar',
         navigatorKey: appNavigatorKey, // lets a tapped notification open a page
         debugShowCheckedModeBanner: false,
@@ -66,8 +85,11 @@ class AlatharApp extends StatelessWidget {
           GlobalCupertinoLocalizations.delegate,
         ],
         theme: AppTheme.light(),
-        home: showOnboarding ? const OnboardingScreen() : const HomeShell(),
-      ),
+        home: widget.showOnboarding && !settings.onboardingDone
+            ? const OnboardingScreen()
+            : const HomeShell(),
+        );
+      },
     );
   }
 }

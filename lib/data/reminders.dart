@@ -12,7 +12,8 @@ import 'prayer_store.dart';
 import 'prayer_times.dart';
 
 /// Lets a tapped notification open a page (see [Reminders]).
-final appNavigatorKey = GlobalKey<NavigatorState>();
+/// Replaced with a fresh key when the app is rebuilt for dark/light mode.
+var appNavigatorKey = GlobalKey<NavigatorState>();
 
 /// The Settings «التذكيرات» switches as phone notifications, which arrive
 /// even when the app is closed. Scheduled on the phone (no server) for the

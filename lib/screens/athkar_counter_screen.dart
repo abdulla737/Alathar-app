@@ -201,13 +201,13 @@ class _AthkarCounterScreenState extends State<AthkarCounterScreen> {
                                       style: AppText.ui(
                                           size: 13,
                                           weight: FontWeight.w700,
-                                          color: const Color(0xFF3D2A08))),
+                                          color: AppColors.brown)),
                                   TextSpan(
                                       text: d.virtue.v,
                                       style: AppText.ui(
                                           size: 13,
                                           height: 1.6,
-                                          color: const Color(0xFF3D2A08))),
+                                          color: AppColors.brown)),
                                 ]),
                               ),
                               const SizedBox(height: 6),

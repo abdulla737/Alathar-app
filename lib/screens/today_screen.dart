@@ -57,6 +57,24 @@ class TodayScreen extends StatelessWidget {
                   ],
                 ),
               ),
+              // Dark / light mode, next to the bell.
+              IconButton.outlined(
+                tooltip: context.tr(AppSettings.instance.darkMode ? 'light_mode' : 'dark_mode'),
+                onPressed: () =>
+                    AppSettings.instance.setDarkMode(!AppSettings.instance.darkMode),
+                style: IconButton.styleFrom(
+                  backgroundColor: AppColors.surface,
+                  side: const BorderSide(color: AppColors.line),
+                  fixedSize: const Size(44, 44),
+                ),
+                icon: Icon(
+                    AppSettings.instance.darkMode
+                        ? Icons.light_mode_outlined
+                        : Icons.dark_mode_outlined,
+                    color: AppSettings.instance.darkMode ? AppColors.nightGold : AppColors.ink,
+                    size: 20),
+              ),
+              const SizedBox(width: 8),
               IconButton.outlined(
                 tooltip: context.tr('notifications'),
                 onPressed: () {},

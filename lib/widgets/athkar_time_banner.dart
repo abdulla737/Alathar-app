@@ -92,8 +92,8 @@ class _AthkarTimeBannerState extends State<AthkarTimeBanner>
   @override
   void initState() {
     super.initState();
-    // Re-checks the time every 3 minutes (also on every rebuild).
-    _timer = Timer.periodic(const Duration(minutes: 3), (_) {
+    // Re-checks the time every minute (also on every rebuild).
+    _timer = Timer.periodic(const Duration(minutes: 1), (_) {
       if (mounted) setState(() {});
     });
   }
@@ -157,39 +157,64 @@ class _AthkarTimeBannerState extends State<AthkarTimeBanner>
           }
           title = context.tr(w.titleKey);
         }
+        // Keeps glowing while it is shown: a soft halo and border in the
+        // strip's own accent color breathe in and out.
         return Padding(
           padding: const EdgeInsets.only(top: 10),
-          child: Material(
-            color: w.background,
-            borderRadius: BorderRadius.circular(16),
-            clipBehavior: Clip.antiAlias,
-            child: InkWell(
-              onTap: () => _open(w),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
-                child: Row(
-                  children: [
-                    FadeTransition(
-                      opacity: Tween(begin: 1.0, end: 0.35).animate(_pulse),
-                      child: Container(
-                        width: 9,
-                        height: 9,
-                        decoration: BoxDecoration(color: w.foreground, shape: BoxShape.circle),
-                      ),
+          child: AnimatedBuilder(
+            animation: _pulse,
+            builder: (context, child) {
+              final t = Curves.easeInOut.transform(_pulse.value);
+              return DecoratedBox(
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(
+                    color: w.foreground.withValues(alpha: 0.25 + 0.5 * t),
+                    width: 1.5,
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: w.foreground.withValues(alpha: 0.12 + 0.33 * t),
+                      blurRadius: 6 + 14 * t,
+                      spreadRadius: 0.5 + 1.5 * t,
                     ),
-                    const SizedBox(width: 10),
-                    if (w.slug == 'prayer') ...[
-                      Icon(Icons.mosque, color: w.foreground, size: 18),
-                      const SizedBox(width: 8),
-                    ],
-                    Expanded(
-                      child: Text(title,
-                          style: AppText.ui(
-                              size: 15, weight: FontWeight.w700, color: w.foreground)),
-                    ),
-                    Icon(S.isRtl ? Icons.chevron_left : Icons.chevron_right,
-                        color: w.foreground, size: 20),
                   ],
+                ),
+                child: child,
+              );
+            },
+            child: Material(
+              color: w.background,
+              borderRadius: BorderRadius.circular(16),
+              clipBehavior: Clip.antiAlias,
+              child: InkWell(
+                onTap: () => _open(w),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
+                  child: Row(
+                    children: [
+                      FadeTransition(
+                        opacity: Tween(begin: 1.0, end: 0.35).animate(_pulse),
+                        child: Container(
+                          width: 9,
+                          height: 9,
+                          decoration: BoxDecoration(color: w.foreground, shape: BoxShape.circle),
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      if (w.slug == 'prayer') ...[
+                        Icon(Icons.mosque, color: w.foreground, size: 18),
+                        const SizedBox(width: 8),
+                      ],
+                      Expanded(
+                        child: Text(title,
+                            style: AppText.ui(
+                                size: 15, weight: FontWeight.w700, color: w.foreground)),
+                      ),
+                      Icon(S.isRtl ? Icons.chevron_left : Icons.chevron_right,
+                          color: w.foreground, size: 20),
+                    ],
+                  ),
                 ),
               ),
             ),

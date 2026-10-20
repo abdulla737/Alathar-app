@@ -14,6 +14,11 @@ class AppSettings extends ChangeNotifier {
   final ValueNotifier<String> languageNotifier = ValueNotifier<String>('ar');
   String get language => languageNotifier.value;
 
+  /// Dark mode (moon/sun button on the Today page). MaterialApp listens to
+  /// this and rebuilds the whole app in the new colors.
+  final ValueNotifier<bool> darkNotifier = ValueNotifier<bool>(false);
+  bool get darkMode => darkNotifier.value;
+
   double arabicSize = 26;
 
   /// Range for the reading size (settings slider and two-finger pinch).
@@ -50,6 +55,7 @@ class AppSettings extends ChangeNotifier {
 
   // Storage keys
   static const _kLanguage = 'language';
+  static const _kDark = 'dark_mode';
   static const _kArabicSize = 'arabic_size';
   static const _kExplanationSize = 'explanation_size';
   static const _kAthkarScale = 'athkar_scale';
@@ -62,6 +68,7 @@ class AppSettings extends ChangeNotifier {
   Future<void> load() async {
     final p = _prefs = await SharedPreferences.getInstance();
     languageNotifier.value = p.getString(_kLanguage) ?? 'ar';
+    darkNotifier.value = p.getBool(_kDark) ?? false;
     arabicSize = (p.getDouble(_kArabicSize) ?? 26).clamp(minArabicSize, maxArabicSize);
     explanationSize = (p.getDouble(_kExplanationSize) ?? 16)
         .clamp(minExplanationSize, maxExplanationSize);
@@ -78,6 +85,13 @@ class AppSettings extends ChangeNotifier {
     if (value == languageNotifier.value) return;
     languageNotifier.value = value;
     _prefs?.setString(_kLanguage, value);
+    notifyListeners();
+  }
+
+  void setDarkMode(bool value) {
+    if (value == darkNotifier.value) return;
+    darkNotifier.value = value;
+    _prefs?.setBool(_kDark, value);
     notifyListeners();
   }
 
