@@ -2,7 +2,7 @@
 setlocal
 cd /d "%~dp0"
 title Alathar - upload to GitHub
-set "REPO=https://github.com/abdulla737/Alathar.git"
+set "REPO=https://github.com/abdulla737/Alathar-app.git"
 
 where git >nul 2>&1
 if errorlevel 1 (
