@@ -273,9 +273,20 @@ class ContentStore extends ChangeNotifier {
     return _athkarCategories = list;
   }
 
+  /// The app's own slugs and their fixed category ids. The server may name a
+  /// category differently (e.g. 'prayer' for 'after_prayer'), so the id is
+  /// the fallback.
+  static const _slugIds = {'morning': 1, 'evening': 2, 'after_prayer': 3, 'sleep': 4};
+
   AthkarCategory? athkarCategoryBySlug(String slug) {
-    for (final c in athkarCategories) {
+    final cats = athkarCategories;
+    for (final c in cats) {
       if (c.slug == slug) return c;
+    }
+    final id = _slugIds[slug];
+    if (id == null) return null;
+    for (final c in cats) {
+      if (c.id == id) return c;
     }
     return null;
   }
