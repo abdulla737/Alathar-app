@@ -51,3 +51,4 @@ app.*.map.json
 build_log.txt
 _to_delete/
 apk/
+phone_log.txt
