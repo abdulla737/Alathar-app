@@ -52,78 +52,7 @@ class _QuranScreenState extends State<QuranScreen> {
         .toList();
   }
 
-  void _showBookmarks() {
-    final store = QuranStore.instance;
-    final q = QuranData.instance;
-    showModalBottomSheet<void>(
-      context: context,
-      backgroundColor: AppColors.surface,
-      showDragHandle: true,
-      isScrollControlled: true,
-      builder: (sheet) => ListenableBuilder(
-        listenable: store,
-        builder: (sheet, _) {
-          final list = store.bookmarkList;
-          return ConstrainedBox(
-            constraints: BoxConstraints(maxHeight: MediaQuery.of(sheet).size.height * 0.7),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(20, 0, 20, 8),
-                  child: Text(sheet.tr('quran_bookmarks'),
-                      style: AppText.ui(size: 17, weight: FontWeight.w700)),
-                ),
-                if (list.isEmpty)
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(20, 8, 20, 32),
-                    child: Text(sheet.tr('quran_no_bookmarks'),
-                        style: AppText.ui(size: 14, color: AppColors.muted, height: 1.6)),
-                  )
-                else
-                  Flexible(
-                    child: ListView.separated(
-                      shrinkWrap: true,
-                      padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
-                      itemCount: list.length,
-                      separatorBuilder: (_, __) => const Divider(color: AppColors.divider),
-                      itemBuilder: (sheet, i) {
-                        final (s, a) = list[i];
-                        final surah = q.surah(s);
-                        return InkWell(
-                          onTap: () {
-                            Navigator.of(sheet).pop();
-                            _open(s, a);
-                          },
-                          child: Padding(
-                            padding: const EdgeInsets.symmetric(vertical: 6),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                    '${S.isArabic ? 'سورة ${surah.name}' : surah.translit} · ${sheet.tr('quran_ayah', {'n': localNum(a)})}',
-                                    style: AppText.ui(
-                                        size: 13, weight: FontWeight.w700, color: AppColors.gold)),
-                                Text(surah.ayat[a - 1],
-                                    maxLines: 2,
-                                    overflow: TextOverflow.ellipsis,
-                                    textDirection: TextDirection.rtl,
-                                    style: quranStyle(18, height: 1.8)),
-                              ],
-                            ),
-                          ),
-                        );
-                      },
-                    ),
-                  ),
-              ],
-            ),
-          );
-        },
-      ),
-    );
-  }
+  void _showBookmarks() => showQuranBookmarks(context, onOpen: _open);
 
   @override
   Widget build(BuildContext context) {

@@ -149,6 +149,9 @@ class _QuranReaderScreenState extends State<QuranReaderScreen> {
     ).then((_) => _loadTajweed());
   }
 
+  /// Turns to the page of a verse (from the saved list).
+  void _goTo(int s, int a) => _pages.jumpToPage(_q.pageOf(s, a) - 1);
+
   void _onPageChanged(int index) {
     setState(() => _page = index + 1);
     final (s, a) = _q.ayatOnPage(_page).first;
@@ -164,7 +167,11 @@ class _QuranReaderScreenState extends State<QuranReaderScreen> {
       context: context,
       backgroundColor: AppColors.surface,
       showDragHandle: true,
-      builder: (_) => _AyahSheet(surah: _q.surah(s), ayah: a),
+      builder: (_) => _AyahSheet(
+        surah: _q.surah(s),
+        ayah: a,
+        onBookmarks: () => showQuranBookmarks(context, onOpen: _goTo),
+      ),
     );
     if (mounted) setState(() => _selected = null);
   }
@@ -330,11 +337,100 @@ class _QuranReaderScreenState extends State<QuranReaderScreen> {
   }
 }
 
+/// «المحفوظات»: every saved verse; tap to open it, or remove it with ✕.
+Future<void> showQuranBookmarks(BuildContext context,
+    {required void Function(int surah, int ayah) onOpen}) {
+  final store = QuranStore.instance;
+  final q = QuranData.instance;
+  return showModalBottomSheet<void>(
+    context: context,
+    backgroundColor: AppColors.surface,
+    showDragHandle: true,
+    isScrollControlled: true,
+    builder: (sheet) => ListenableBuilder(
+      listenable: store,
+      builder: (sheet, _) {
+        final list = store.bookmarkList;
+        return ConstrainedBox(
+          constraints: BoxConstraints(maxHeight: MediaQuery.of(sheet).size.height * 0.7),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 0, 20, 8),
+                child: Text(sheet.tr('quran_bookmarks'),
+                    style: AppText.ui(size: 17, weight: FontWeight.w700)),
+              ),
+              if (list.isEmpty)
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 8, 20, 32),
+                  child: Text(sheet.tr('quran_no_bookmarks'),
+                      style: AppText.ui(size: 14, color: AppColors.muted, height: 1.6)),
+                )
+              else
+                Flexible(
+                  child: ListView.separated(
+                    shrinkWrap: true,
+                    padding: const EdgeInsets.fromLTRB(20, 0, 8, 24),
+                    itemCount: list.length,
+                    separatorBuilder: (_, __) => const Divider(color: AppColors.divider),
+                    itemBuilder: (sheet, i) {
+                      final (s, a) = list[i];
+                      final surah = q.surah(s);
+                      return Row(
+                        children: [
+                          Expanded(
+                            child: InkWell(
+                              onTap: () {
+                                Navigator.of(sheet).pop();
+                                onOpen(s, a);
+                              },
+                              child: Padding(
+                                padding: const EdgeInsets.symmetric(vertical: 6),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                        '${S.isArabic ? 'سورة ${surah.name}' : surah.translit} · ${sheet.tr('quran_ayah', {'n': localNum(a)})} · ${sheet.tr('quran_page', {'n': localNum(q.pageOf(s, a))})}',
+                                        style: AppText.ui(
+                                            size: 13,
+                                            weight: FontWeight.w700,
+                                            color: AppColors.gold)),
+                                    Text(surah.ayat[a - 1],
+                                        maxLines: 2,
+                                        overflow: TextOverflow.ellipsis,
+                                        textDirection: TextDirection.rtl,
+                                        style: quranStyle(18, height: 1.8)),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
+                          IconButton(
+                            tooltip: sheet.tr('quran_unbookmark'),
+                            onPressed: () => store.toggleBookmark(s, a),
+                            icon: const Icon(Icons.close, color: AppColors.muted),
+                          ),
+                        ],
+                      );
+                    },
+                  ),
+                ),
+            ],
+          ),
+        );
+      },
+    ),
+  );
+}
+
 /// Actions for a tapped verse: bookmark, copy, share, "I stopped here".
 class _AyahSheet extends StatelessWidget {
   final Surah surah;
   final int ayah;
-  const _AyahSheet({required this.surah, required this.ayah});
+  final VoidCallback? onBookmarks; // opens the list of all saved verses
+  const _AyahSheet({required this.surah, required this.ayah, this.onBookmarks});
 
   String get _text => surah.ayat[ayah - 1];
   String get _reference => '[${surah.name}: ${arabicDigits(ayah)}]';
@@ -404,6 +500,12 @@ class _AyahSheet extends StatelessWidget {
                               ? null
                               : box.localToGlobal(Offset.zero) & box.size);
                     }),
+                    if (onBookmarks != null)
+                      action(Icons.collections_bookmark_outlined,
+                          '${context.tr('quran_bookmarks')} (${localNum(store.bookmarks.length)})', () {
+                        Navigator.of(context).pop();
+                        onBookmarks!();
+                      }),
                     action(Icons.flag_outlined, context.tr('quran_mark_read'), () {
                       final messenger = ScaffoldMessenger.of(context);
                       final done = context.tr('quran_marked');
