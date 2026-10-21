@@ -201,6 +201,18 @@ class ContentStore extends ChangeNotifier {
 
   static const _kHotd = 'hadith_of_the_day'; // "YYYY-MM-DD:id"
 
+  /// Books that have their own «الحديث اليومي» card on the Today page.
+  static const tawhidCollectionId = 6; // كتاب التوحيد
+  static const riyadCollectionId = 2; // رياض الصالحين
+
+  /// Hadith that may be a daily hadith, from one book (or all when null).
+  List<Hadith> _dailyPool(int? collectionId) => allHadith
+      .where((h) =>
+          h.dailyOk &&
+          h.kind == HadithKind.hadith &&
+          (collectionId == null || h.collectionId == collectionId))
+      .toList();
+
   /// One hadith per day: the same all day long and on every phone.
   ///
   /// - The pool is every hadith with `daily_ok` (verses, athar and disputed
@@ -210,10 +222,11 @@ class ContentStore extends ChangeNotifier {
   ///   the next one, and the whole pool is shown before any repeats.
   /// - Today's pick is remembered, so new content downloaded during the day
   ///   does not change it. A new one appears after midnight.
-  Hadith hadithOfToday() {
-    final pool =
-        allHadith.where((h) => h.dailyOk && h.kind == HadithKind.hadith).toList();
+  Hadith hadithOfToday({int? collectionId = tawhidCollectionId}) {
+    var pool = _dailyPool(collectionId);
+    if (pool.isEmpty) pool = _dailyPool(null); // book not downloaded yet
     if (pool.isEmpty) return SampleData.hadithOfTheDay;
+    final prefKey = collectionId == null ? _kHotd : '${_kHotd}_$collectionId';
 
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
@@ -221,7 +234,7 @@ class ContentStore extends ChangeNotifier {
         '${today.day.toString().padLeft(2, '0')}';
 
     // Already chosen today?
-    final saved = _prefs?.getString(_kHotd);
+    final saved = _prefs?.getString(prefKey);
     if (saved != null && saved.startsWith('$key:')) {
       final id = int.tryParse(saved.substring(key.length + 1));
       for (final h in pool) {
@@ -238,7 +251,7 @@ class ContentStore extends ChangeNotifier {
         .difference(DateTime.utc(2024, 1, 1))
         .inDays;
     final pick = pool[day % pool.length];
-    _prefs?.setString(_kHotd, '$key:${pick.id}');
+    _prefs?.setString(prefKey, '$key:${pick.id}');
     return pick;
   }
 

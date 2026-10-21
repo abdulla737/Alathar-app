@@ -109,7 +109,18 @@ class TodayScreen extends StatelessWidget {
           // «ورد التلاوة اليومية» first, then «ورد الحديث اليومي».
           const QuranWirdCard(),
           const SizedBox(height: 16),
+          // «الحديث اليومي»: one card per book — التوحيد, then رياض الصالحين.
           _HadithOfTheDayCard(
+            collectionId: ContentStore.tawhidCollectionId,
+            titleKey: 'hadith_daily_tawhid',
+            onOpen: (h) => Navigator.of(context).push(MaterialPageRoute(
+              builder: (_) => HadithDetailScreen(hadith: h),
+            )),
+          ),
+          const SizedBox(height: 16),
+          _HadithOfTheDayCard(
+            collectionId: ContentStore.riyadCollectionId,
+            titleKey: 'hadith_daily_riyad',
             onOpen: (h) => Navigator.of(context).push(MaterialPageRoute(
               builder: (_) => HadithDetailScreen(hadith: h),
             )),
@@ -205,8 +216,11 @@ class TodayScreen extends StatelessWidget {
 }
 
 class _HadithOfTheDayCard extends StatelessWidget {
+  final int collectionId;
+  final String titleKey;
   final ValueChanged<Hadith> onOpen;
-  const _HadithOfTheDayCard({required this.onOpen});
+  const _HadithOfTheDayCard(
+      {required this.collectionId, required this.titleKey, required this.onOpen});
 
   /// «ورد الحديث اليومي»: today's hadith in short, how many daily hadith
   /// you have read, and one tap to read it in full.
@@ -217,7 +231,8 @@ class _HadithOfTheDayCard extends StatelessWidget {
       builder: (context, _) {
         final user = UserStore.instance;
         // One hadith a day; done when the user slides to confirm on its page.
-        final hadith = ContentStore.instance.hadithOfToday();
+        final hadith =
+            ContentStore.instance.hadithOfToday(collectionId: collectionId);
         final doneToday = user.readToday(hadith.id);
         final read = doneToday ? 1 : 0;
         const total = 1;
@@ -250,7 +265,7 @@ class _HadithOfTheDayCard extends StatelessWidget {
                         const Icon(Icons.menu_book_rounded, color: AppColors.sand, size: 20),
                         const SizedBox(width: 8),
                         Expanded(
-                          child: Text(context.tr('hadith_wird'),
+                          child: Text(context.tr(titleKey),
                               style: AppText.ui(
                                   size: 15, weight: FontWeight.w700, color: Colors.white)),
                         ),
