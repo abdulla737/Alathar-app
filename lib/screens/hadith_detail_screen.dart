@@ -21,6 +21,8 @@ class HadithDetailScreen extends StatelessWidget {
     final h = hadith;
     final settings = AppSettings.instance;
     final store = UserStore.instance;
+    // Counts as read (daily-hadith progress on the Today page).
+    WidgetsBinding.instance.addPostFrameCallback((_) => store.markRead(h.id));
 
     return Scaffold(
       appBar: AppBar(

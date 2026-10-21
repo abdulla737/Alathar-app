@@ -9,12 +9,10 @@ import '../data/user_store.dart';
 import '../data/sample_data.dart';
 import '../l10n/strings.dart';
 import '../theme/app_theme.dart';
-import '../widgets/audio_button.dart';
 import '../widgets/common.dart';
 import '../widgets/athkar_time_banner.dart';
 import '../widgets/prayer_card.dart';
 import '../widgets/quran_wird_card.dart';
-import '../widgets/share_card.dart';
 import 'athkar_counter_screen.dart';
 import 'friday_screen.dart';
 import 'hadith_detail_screen.dart';
@@ -210,83 +208,100 @@ class _HadithOfTheDayCard extends StatelessWidget {
   final VoidCallback onTap;
   const _HadithOfTheDayCard({required this.hadith, required this.onTap});
 
+  /// «ورد الحديث اليومي»: today's hadith in short, how many daily hadith
+  /// you have read, and one tap to read it in full.
   @override
   Widget build(BuildContext context) {
     return ListenableBuilder(
-      listenable: AppSettings.instance,
+      listenable: Listenable.merge([AppSettings.instance, UserStore.instance]),
       builder: (context, _) {
+        final user = UserStore.instance;
+        final pool = [
+          for (final h in ContentStore.instance.allHadith)
+            if (h.dailyOk && h.kind == HadithKind.hadith) h.id,
+        ];
+        final total = pool.isEmpty ? 1 : pool.length;
+        final read = user.readCountAmong(pool);
+        final doneToday = user.hasRead(hadith.id);
+        String n(int v) => S.isArabic ? _arabicDigits(v) : '$v';
         return AppCard(
           color: AppColors.green,
           borderWidth: 0,
-          radius: 24,
+          radius: 22,
           padding: EdgeInsets.zero,
           onTap: onTap,
           child: Stack(
             children: [
               const PositionedDirectional(
-                end: -40,
-                top: -40,
+                end: -36,
+                top: -36,
                 child: Opacity(
                   opacity: 0.12,
                   child: StarMotif(
-                      size: 160, color: Colors.white, strokeWidth: 4, withInner: true),
+                      size: 130, color: Colors.white, strokeWidth: 4, withInner: true),
                 ),
               ),
               Padding(
-                padding: const EdgeInsets.fromLTRB(20, 22, 20, 18),
+                padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    Text(context.tr('hadith_of_day'),
-                        style: AppText.overline(color: AppColors.sand)
-                            .copyWith(fontSize: S.isRtl ? 13 : 11)),
-                    const SizedBox(height: 14),
-                    ArabicText(hadith.arabic,
-                        style: AppText.arabic(
-                            size: AppSettings.instance.arabicSize + (S.isArabic ? 3 : -1),
-                            color: Colors.white,
-                            height: 1.75)),
-                    // The Arabic text is the hadith itself, so no translation in Arabic.
-                    if (!S.isArabic) ...[
-                      const SizedBox(height: 14),
-                      Text(hadith.translation,
+                    Row(
+                      children: [
+                        const Icon(Icons.menu_book_rounded, color: AppColors.sand, size: 20),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(context.tr('hadith_wird'),
+                              style: AppText.ui(
+                                  size: 15, weight: FontWeight.w700, color: Colors.white)),
+                        ),
+                        if (doneToday)
+                          Pill(context.tr('hadith_done_today'),
+                              background: AppColors.sand,
+                              foreground: const Color(0xFF3D2A08)),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    if (hadith.title.v.isNotEmpty)
+                      Text(hadith.title.v,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                           style: AppText.ui(
-                              size: 15, color: AppColors.onGreenBody, height: 1.5)),
-                    ],
-                    const SizedBox(height: 14),
-                    const Divider(color: Color(0x2EFFFFFF), height: 1),
-                    const SizedBox(height: 12),
+                              size: 14, weight: FontWeight.w700, color: AppColors.sand)),
+                    Text(S.isArabic ? hadith.arabic : hadith.translation,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        textDirection: S.isArabic ? TextDirection.rtl : null,
+                        style: S.isArabic
+                            ? AppText.arabic(size: 20, color: Colors.white, height: 1.7)
+                            : AppText.ui(size: 15, color: AppColors.onGreenBody, height: 1.5)),
+                    const SizedBox(height: 4),
+                    Text(hadith.reference.v,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: AppText.ui(size: 12, color: AppColors.onGreenMuted)),
+                    const SizedBox(height: 10),
+                    ProgressLine(
+                      value: read / total,
+                      height: 5,
+                      color: AppColors.sand,
+                      track: Colors.white.withValues(alpha: 0.18),
+                    ),
+                    const SizedBox(height: 8),
                     Row(
                       children: [
                         Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(hadith.reference.v,
-                                  style: AppText.ui(
-                                      size: 13,
-                                      weight: FontWeight.w600,
-                                      color: Colors.white)),
-                              const SizedBox(height: 2),
-                              Text(
-                                  context.tr('narrated_by',
-                                      {'name': hadith.narrator.v}),
-                                  style: AppText.ui(
-                                      size: 12, color: AppColors.onGreenMuted)),
-                            ],
-                          ),
+                          child: Text(
+                              context.tr('hadith_read_progress', {'n': n(read), 't': n(pool.length)}),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: AppText.ui(size: 12, color: AppColors.onGreenMuted)),
                         ),
-                        if (hadith.grade.v.isNotEmpty)
-                          Pill(hadith.grade.v,
-                              background: AppColors.sand,
-                              foreground: const Color(0xFF3D2A08)),
-                        const SizedBox(width: 4),
-                        HadithAudioButton(hadith: hadith, color: AppColors.sand, size: 22),
-                        IconButton(
-                          tooltip: context.tr('share_card'),
-                          onPressed: () => showHadithShare(context, hadith),
-                          icon: const Icon(Icons.ios_share, color: AppColors.sand, size: 22),
-                        ),
+                        Text(context.tr('hadith_read_full'),
+                            style: AppText.ui(
+                                size: 13, weight: FontWeight.w700, color: AppColors.sand)),
+                        Icon(S.isRtl ? Icons.chevron_left : Icons.chevron_right,
+                            color: AppColors.sand, size: 18),
                       ],
                     ),
                   ],
@@ -300,22 +315,8 @@ class _HadithOfTheDayCard extends StatelessWidget {
   }
 }
 
-/// Minute ticks so the "time for athkar" highlight follows the clock.
-final Stream<void> _minuteTicks =
-    Stream<void>.periodic(const Duration(minutes: 1)).asBroadcastStream();
-
-/// Morning athkar start: Fajr (4:00 if no location is set yet).
-/// From then the card glows until tapped.
-bool isMorningAthkarTime(DateTime t) {
-  final day = PrayerStore.instance.dayOf(t);
-  return day == null ? t.hour >= 4 : !t.isBefore(day[Prayer.fajr]);
-}
-
-/// Evening athkar start: Asr (15:00 if no location is set yet).
-bool isEveningAthkarTime(DateTime t) {
-  final day = PrayerStore.instance.dayOf(t);
-  return day == null ? t.hour >= 15 : !t.isBefore(day[Prayer.asr]);
-}
+String _arabicDigits(int v) =>
+    v.toString().split('').map((c) => '٠١٢٣٤٥٦٧٨٩'[int.parse(c)]).join();
 
 class _AthkarStatusCard extends StatefulWidget {
   final Widget icon;

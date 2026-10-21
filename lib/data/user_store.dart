@@ -26,6 +26,10 @@ class UserStore extends ChangeNotifier {
   final Map<String, List<int>> _history = {};
   String _today = _dayKey(DateTime.now());
 
+  /// hadith ids the user has opened to read in full (for the daily-hadith
+  /// progress on the Today page)
+  final Set<int> _read = {};
+
   /// athkar category ids completed today (all athkar counted to the end)
   final Set<int> _athkarDoneToday = {};
 
@@ -33,6 +37,7 @@ class UserStore extends ChangeNotifier {
   final Set<int> _athkarSeenToday = {};
 
   static const _kFavorites = 'favorites';
+  static const _kRead = 'hadith_read';
   static const _kHistory = 'acted_history';
   static const _kActedPrefix = 'acted_';
   static const _kAthkarPrefix = 'athkar_done_';
@@ -44,6 +49,7 @@ class UserStore extends ChangeNotifier {
   /// Reads saved data from the phone. Call once at startup.
   Future<void> load() async {
     final p = _prefs = await SharedPreferences.getInstance();
+    _read.addAll((p.getStringList(_kRead) ?? const []).map(int.tryParse).whereType<int>());
 
     // Favorites: stored as JSON [{"id":1,"at":1729300000000}, ...]
     final raw = p.getString(_kFavorites);
@@ -107,6 +113,20 @@ class UserStore extends ChangeNotifier {
     if (!_athkarSeenToday.add(categoryId)) return;
     _prefs?.setStringList(
         '$_kSeenPrefix$_today', [for (final id in _athkarSeenToday) '$id']);
+    notifyListeners();
+  }
+
+  // ------------------------------------------------------ Hadith reading
+
+  bool hasRead(int hadithId) => _read.contains(hadithId);
+
+  /// How many of [ids] the user has read.
+  int readCountAmong(Iterable<int> ids) => ids.where(_read.contains).length;
+
+  /// Called when a hadith is opened in full.
+  void markRead(int hadithId) {
+    if (!_read.add(hadithId)) return;
+    _prefs?.setStringList(_kRead, [for (final id in _read) '$id']);
     notifyListeners();
   }
 
