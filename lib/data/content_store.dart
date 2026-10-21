@@ -242,6 +242,23 @@ class ContentStore extends ChangeNotifier {
     return pick;
   }
 
+  /// Today's hadith reading: today's hadith and the next [count] − 1 in the
+  /// same fixed order, so a goal of 3 a day gives 3 different hadith.
+  List<Hadith> hadithsOfToday(int count) {
+    final first = hadithOfToday();
+    final pool =
+        allHadith.where((h) => h.dailyOk && h.kind == HadithKind.hadith).toList();
+    if (pool.length < 2 || count <= 1) return [first];
+    pool.sort((a, b) {
+      final ha = _mix(a.id), hb = _mix(b.id);
+      return ha != hb ? ha.compareTo(hb) : a.id.compareTo(b.id);
+    });
+    final start = pool.indexWhere((h) => h.id == first.id);
+    if (start < 0) return [first];
+    final n = count.clamp(1, pool.length);
+    return [for (var i = 0; i < n; i++) pool[(start + i) % pool.length]];
+  }
+
   /// Spreads ids into a stable pseudo-random order (same on every phone and
   /// on the web build: the numbers stay below 2^53, no bit operations).
   static int _mix(int id) => (id * 2654435761) % 4294967291;

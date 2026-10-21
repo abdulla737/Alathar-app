@@ -42,6 +42,15 @@ class AppSettings extends ChangeNotifier {
   double bookScale = 1.0;
   static const minBookScale = 0.8;
   static const maxBookScale = 1.8;
+  /// Daily reading goals (Settings → «الورد اليومي»): hadith per day,
+  /// Qur'an pages per day, and the surahs the Qur'an reading covers.
+  int hadithPerDay = 1;
+  static const maxHadithPerDay = 10;
+  int quranPagesPerDay = 2;
+  static const maxQuranPagesPerDay = 40;
+  int quranFromSurah = 1;
+  int quranToSurah = 114;
+
   String translation = 'English';
   bool onboardingDone = false;
 
@@ -49,6 +58,7 @@ class AppSettings extends ChangeNotifier {
     'hadith': true,
     'morning': true,
     'evening': true,
+    'quran': true, // «ورد التلاوة اليومية»
     'friday': true, // «تذكير بسنن يوم الجمعة»: Friday card on Today
     'nudges': false,
   };
@@ -61,6 +71,10 @@ class AppSettings extends ChangeNotifier {
   static const _kAthkarScale = 'athkar_scale';
   static const _kBookScale = 'book_scale';
   static const _kTranslation = 'translation';
+  static const _kHadithPerDay = 'goal_hadith_per_day';
+  static const _kQuranPages = 'goal_quran_pages';
+  static const _kQuranFrom = 'goal_quran_from';
+  static const _kQuranTo = 'goal_quran_to';
   static const _kOnboarding = 'onboarding_done';
   static String _kReminder(String key) => 'reminder_$key';
 
@@ -75,6 +89,10 @@ class AppSettings extends ChangeNotifier {
     athkarScale = (p.getDouble(_kAthkarScale) ?? 1.0).clamp(minAthkarScale, maxAthkarScale);
     bookScale = (p.getDouble(_kBookScale) ?? 1.0).clamp(minBookScale, maxBookScale);
     translation = p.getString(_kTranslation) ?? 'English';
+    hadithPerDay = (p.getInt(_kHadithPerDay) ?? 1).clamp(1, maxHadithPerDay);
+    quranPagesPerDay = (p.getInt(_kQuranPages) ?? 2).clamp(1, maxQuranPagesPerDay);
+    quranFromSurah = (p.getInt(_kQuranFrom) ?? 1).clamp(1, 114);
+    quranToSurah = (p.getInt(_kQuranTo) ?? 114).clamp(quranFromSurah, 114);
     onboardingDone = p.getBool(_kOnboarding) ?? false;
     for (final key in reminders.keys.toList()) {
       reminders[key] = p.getBool(_kReminder(key)) ?? reminders[key]!;
@@ -119,6 +137,27 @@ class AppSettings extends ChangeNotifier {
   void setBookScale(double value) {
     bookScale = (value.clamp(minBookScale, maxBookScale) * 10).roundToDouble() / 10;
     _prefs?.setDouble(_kBookScale, bookScale);
+    notifyListeners();
+  }
+
+  void setHadithPerDay(int value) {
+    hadithPerDay = value.clamp(1, maxHadithPerDay);
+    _prefs?.setInt(_kHadithPerDay, hadithPerDay);
+    notifyListeners();
+  }
+
+  void setQuranPagesPerDay(int value) {
+    quranPagesPerDay = value.clamp(1, maxQuranPagesPerDay);
+    _prefs?.setInt(_kQuranPages, quranPagesPerDay);
+    notifyListeners();
+  }
+
+  /// The surahs the daily Qur'an reading covers ([from] ≤ [to]).
+  void setQuranRange(int from, int to) {
+    quranFromSurah = from.clamp(1, 114);
+    quranToSurah = to.clamp(quranFromSurah, 114);
+    _prefs?.setInt(_kQuranFrom, quranFromSurah);
+    _prefs?.setInt(_kQuranTo, quranToSurah);
     notifyListeners();
   }
 

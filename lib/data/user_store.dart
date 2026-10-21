@@ -30,6 +30,10 @@ class UserStore extends ChangeNotifier {
   /// progress on the Today page)
   final Set<int> _read = {};
 
+  /// hadith ids read today (daily-goal progress); reset at midnight
+  final Set<int> _readToday = {};
+  String _readDay = '';
+
   /// athkar category ids completed today (all athkar counted to the end)
   final Set<int> _athkarDoneToday = {};
 
@@ -38,6 +42,7 @@ class UserStore extends ChangeNotifier {
 
   static const _kFavorites = 'favorites';
   static const _kRead = 'hadith_read';
+  static const _kReadToday = 'hadith_read_today'; // "YYYY-MM-DD:1,2,3"
   static const _kHistory = 'acted_history';
   static const _kActedPrefix = 'acted_';
   static const _kAthkarPrefix = 'athkar_done_';
@@ -50,6 +55,12 @@ class UserStore extends ChangeNotifier {
   Future<void> load() async {
     final p = _prefs = await SharedPreferences.getInstance();
     _read.addAll((p.getStringList(_kRead) ?? const []).map(int.tryParse).whereType<int>());
+    final rt = p.getString(_kReadToday) ?? '';
+    final colon = rt.indexOf(':');
+    if (colon > 0) {
+      _readDay = rt.substring(0, colon);
+      _readToday.addAll(rt.substring(colon + 1).split(',').map(int.tryParse).whereType<int>());
+    }
 
     // Favorites: stored as JSON [{"id":1,"at":1729300000000}, ...]
     final raw = p.getString(_kFavorites);
@@ -123,10 +134,32 @@ class UserStore extends ChangeNotifier {
   /// How many of [ids] the user has read.
   int readCountAmong(Iterable<int> ids) => ids.where(_read.contains).length;
 
+  /// How many of [ids] the user has read today.
+  int readTodayAmong(Iterable<int> ids) {
+    _rollReadDay();
+    return ids.where(_readToday.contains).length;
+  }
+
+  bool readToday(int hadithId) {
+    _rollReadDay();
+    return _readToday.contains(hadithId);
+  }
+
+  void _rollReadDay() {
+    final today = _dayKey(DateTime.now());
+    if (_readDay == today) return;
+    _readDay = today;
+    _readToday.clear();
+  }
+
   /// Called when a hadith is opened in full.
   void markRead(int hadithId) {
-    if (!_read.add(hadithId)) return;
+    _rollReadDay();
+    final newEver = _read.add(hadithId);
+    final newToday = _readToday.add(hadithId);
+    if (!newEver && !newToday) return;
     _prefs?.setStringList(_kRead, [for (final id in _read) '$id']);
+    _prefs?.setString(_kReadToday, '$_readDay:${_readToday.join(',')}');
     notifyListeners();
   }
 

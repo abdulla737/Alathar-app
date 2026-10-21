@@ -173,6 +173,10 @@ class QuranStore extends ChangeNotifier {
   /// Colour of the surah banners and verse medallions (0 = green).
   int ornament = 0;
 
+  /// Mushaf pages read today (daily-goal progress); reset at midnight.
+  final Set<int> _pagesToday = {};
+  String _pagesDay = '';
+
   /// Qur'an text size on the reading page (its own A− / A+).
   double size = 24;
   static const minSize = 20.0;
@@ -184,6 +188,7 @@ class QuranStore extends ChangeNotifier {
   static const _kSize = 'quran_size';
   static const _kTajweed = 'quran_tajweed';
   static const _kOrnament = 'quran_ornament';
+  static const _kPagesToday = 'quran_pages_today'; // "YYYY-MM-DD:1,2"
 
   Future<void> load() async {
     final p = _prefs = await SharedPreferences.getInstance();
@@ -195,6 +200,12 @@ class QuranStore extends ChangeNotifier {
     size = (p.getDouble(_kSize) ?? 24).clamp(minSize, maxSize);
     tajweed = p.getBool(_kTajweed) ?? true;
     ornament = p.getInt(_kOrnament) ?? 0;
+    final pt = p.getString(_kPagesToday) ?? '';
+    final colon = pt.indexOf(':');
+    if (colon > 0) {
+      _pagesDay = pt.substring(0, colon);
+      _pagesToday.addAll(pt.substring(colon + 1).split(',').map(int.tryParse).whereType<int>());
+    }
   }
 
   void setPosition(int surah, int ayah) {
@@ -227,6 +238,30 @@ class QuranStore extends ChangeNotifier {
   void setTajweed(bool value) {
     tajweed = value;
     _prefs?.setBool(_kTajweed, value);
+    notifyListeners();
+  }
+
+  static String _day(DateTime d) =>
+      '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
+
+  void _rollPagesDay() {
+    final today = _day(DateTime.now());
+    if (_pagesDay == today) return;
+    _pagesDay = today;
+    _pagesToday.clear();
+  }
+
+  /// Pages read today.
+  int get pagesReadToday {
+    _rollPagesDay();
+    return _pagesToday.length;
+  }
+
+  /// Called when a page is shown in the reader.
+  void markPageRead(int page) {
+    _rollPagesDay();
+    if (!_pagesToday.add(page)) return;
+    _prefs?.setString(_kPagesToday, '$_pagesDay:${_pagesToday.join(',')}');
     notifyListeners();
   }
 

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../data/app_settings.dart';
+import '../data/quran.dart';
 import '../data/content_store.dart';
 import '../data/content_sync.dart';
 import '../data/user_store.dart';
@@ -11,7 +12,7 @@ import 'saved_screen.dart';
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
 
-  static const _reminderKeys = ['hadith', 'morning', 'evening', 'friday', 'nudges'];
+  static const _reminderKeys = ['hadith', 'quran', 'morning', 'evening', 'friday', 'nudges'];
 
   static const _languages = {'ar': 'العربية', 'en': 'English', 'ur': 'اردو'};
 
@@ -90,6 +91,37 @@ class SettingsScreen extends StatelessWidget {
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 4),
               child: Text(context.tr('reminders_note'),
+                  style: AppText.ui(size: 12, color: AppColors.muted, height: 1.5)),
+            ),
+            const SizedBox(height: 18),
+
+            // «الورد اليومي»: daily goals; the Today cards measure progress
+            // against these.
+            Text(context.tr('wird_section'), style: AppText.overline()),
+            const SizedBox(height: 8),
+            _Group(
+              children: [
+                _StepperRow(
+                  label: context.tr('wird_hadith_per_day'),
+                  value: settings.hadithPerDay,
+                  min: 1,
+                  max: AppSettings.maxHadithPerDay,
+                  onChanged: settings.setHadithPerDay,
+                ),
+                _StepperRow(
+                  label: context.tr('wird_quran_pages'),
+                  value: settings.quranPagesPerDay,
+                  min: 1,
+                  max: AppSettings.maxQuranPagesPerDay,
+                  onChanged: settings.setQuranPagesPerDay,
+                ),
+                const _QuranRangeRows(),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 4),
+              child: Text(context.tr('wird_note'),
                   style: AppText.ui(size: 12, color: AppColors.muted, height: 1.5)),
             ),
             const SizedBox(height: 18),
@@ -236,6 +268,104 @@ class _ContentUpdateRowState extends State<_ContentUpdateRow> {
                         size: 13, weight: FontWeight.w600, color: AppColors.green)),
               ),
       ),
+    );
+  }
+}
+
+/// «أحاديث في اليوم   −  ٣  +»
+class _StepperRow extends StatelessWidget {
+  final String label;
+  final int value;
+  final int min;
+  final int max;
+  final ValueChanged<int> onChanged;
+  const _StepperRow(
+      {required this.label,
+      required this.value,
+      required this.min,
+      required this.max,
+      required this.onChanged});
+
+  @override
+  Widget build(BuildContext context) {
+    Widget button(IconData icon, VoidCallback? onTap) => IconButton.outlined(
+          onPressed: onTap,
+          visualDensity: VisualDensity.compact,
+          style: IconButton.styleFrom(
+            side: BorderSide(color: onTap == null ? AppColors.line : AppColors.green),
+            foregroundColor: AppColors.green,
+          ),
+          icon: Icon(icon, size: 18),
+        );
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+      child: Row(
+        children: [
+          Expanded(
+            child: Text(label, style: AppText.ui(size: 15, weight: FontWeight.w600)),
+          ),
+          button(Icons.remove, value > min ? () => onChanged(value - 1) : null),
+          SizedBox(
+            width: 40,
+            child: Text(S.isArabic ? arabicDigits(value) : '$value',
+                textAlign: TextAlign.center,
+                style: AppText.ui(size: 17, weight: FontWeight.w700, color: AppColors.green)),
+          ),
+          button(Icons.add, value < max ? () => onChanged(value + 1) : null),
+        ],
+      ),
+    );
+  }
+}
+
+/// «من سورة» / «إلى سورة» for the daily Qur'an reading.
+class _QuranRangeRows extends StatelessWidget {
+  const _QuranRangeRows();
+
+  @override
+  Widget build(BuildContext context) {
+    final settings = AppSettings.instance;
+    final q = QuranData.instance;
+    return FutureBuilder<void>(
+      future: q.ensureLoaded(),
+      builder: (context, _) {
+        if (!q.isLoaded) return const SizedBox(height: 0);
+        String label(Surah s) =>
+            '${S.isArabic ? arabicDigits(s.number) : s.number}. ${S.isArabic ? s.name : s.translit}';
+        Widget row(String title, int value, int min, ValueChanged<int> onChanged) => Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Text(title, style: AppText.ui(size: 15, weight: FontWeight.w600)),
+                  ),
+                  DropdownButton<int>(
+                    value: value,
+                    underline: const SizedBox.shrink(),
+                    borderRadius: BorderRadius.circular(12),
+                    menuMaxHeight: 420,
+                    style: AppText.ui(size: 14),
+                    items: [
+                      for (final s in q.surahs)
+                        if (s.number >= min)
+                          DropdownMenuItem(value: s.number, child: Text(label(s))),
+                    ],
+                    onChanged: (v) {
+                      if (v != null) onChanged(v);
+                    },
+                  ),
+                ],
+              ),
+            );
+        return Column(
+          children: [
+            row(context.tr('wird_from_surah'), settings.quranFromSurah, 1,
+                (v) => settings.setQuranRange(v, v > settings.quranToSurah ? v : settings.quranToSurah)),
+            row(context.tr('wird_to_surah'), settings.quranToSurah, settings.quranFromSurah,
+                (v) => settings.setQuranRange(settings.quranFromSurah, v)),
+          ],
+        );
+      },
     );
   }
 }

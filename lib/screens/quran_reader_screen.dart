@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:share_plus/share_plus.dart';
 
+import '../data/app_settings.dart';
 import '../data/quran.dart';
 import '../l10n/strings.dart';
 import '../theme/app_theme.dart';
@@ -120,7 +121,35 @@ class _QuranReaderScreenState extends State<QuranReaderScreen> {
   void initState() {
     super.initState();
     QuranStore.instance.setPosition(widget.surah, _openAyah);
+    _countPage(_page);
     _loadTajweed();
+    // Briefly highlight the verse that was opened (juz / bookmark / search).
+    if (_openAyah > 1) {
+      _selected = _q.indexOf(widget.surah, _openAyah);
+      Future.delayed(const Duration(seconds: 2), () {
+        if (mounted && _selected == _q.indexOf(widget.surah, _openAyah)) {
+          setState(() => _selected = null);
+        }
+      });
+    }
+  }
+
+  /// Counts the page toward today's reading goal when it is inside the
+  /// chosen range of surahs (Settings → «الورد اليومي»).
+  void _countPage(int page) {
+    final settings = AppSettings.instance;
+    final from = _q.pageOf(settings.quranFromSurah, 1);
+    final last = _q.surah(settings.quranToSurah);
+    final to = _q.pageOf(last.number, last.count);
+    if (page >= from && page <= to) QuranStore.instance.markPageRead(page);
+  }
+
+  /// The surah shown in the title: the one opened, while its verses are on
+  /// the page; otherwise the first surah on the page.
+  int _titleSurah(int page) {
+    final ayat = _q.ayatOnPage(page);
+    if (ayat.any((v) => v.$1 == widget.surah)) return widget.surah;
+    return ayat.first.$1;
   }
 
   @override
@@ -153,9 +182,13 @@ class _QuranReaderScreenState extends State<QuranReaderScreen> {
   void _goTo(int s, int a) => _pages.jumpToPage(_q.pageOf(s, a) - 1);
 
   void _onPageChanged(int index) {
-    setState(() => _page = index + 1);
+    setState(() {
+      _page = index + 1;
+      _selected = null;
+    });
     final (s, a) = _q.ayatOnPage(_page).first;
     QuranStore.instance.setPosition(s, a);
+    _countPage(_page);
   }
 
   TapGestureRecognizer _tap(int s, int a) =>
@@ -183,8 +216,7 @@ class _QuranReaderScreenState extends State<QuranReaderScreen> {
       builder: (context, _) {
         final store = QuranStore.instance;
         final size = store.size;
-        final (s, _) = _q.ayatOnPage(_page).first;
-        final surah = _q.surah(s);
+        final surah = _q.surah(_titleSurah(_page));
         return Scaffold(
           backgroundColor: AppColors.ground,
           appBar: AppBar(
@@ -309,7 +341,14 @@ class _QuranReaderScreenState extends State<QuranReaderScreen> {
                 children: [
                   Row(
                     children: [
-                      Expanded(child: Text(_q.surah(firstS).name, style: header)),
+                      // Every surah on this page, as in the printed mushaf.
+                      Expanded(
+                        child: Text(
+                            {for (final v in ayat) _q.surah(v.$1).name}.join(' · '),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: header),
+                      ),
                       Text(context.tr('quran_juz', {'n': localNum(_q.juzOf(firstS, firstA))}),
                           style: header),
                     ],

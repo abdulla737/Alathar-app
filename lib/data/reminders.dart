@@ -127,7 +127,7 @@ class Reminders {
     _last = _signature();
     try {
       await _plugin.cancelAll();
-      final keys = ['hadith', 'morning', 'evening', 'friday', 'nudges'];
+      final keys = ['hadith', 'quran', 'morning', 'evening', 'friday', 'nudges'];
       if (!keys.any(_on)) return;
       if (askPermission) await _askPermission();
 
@@ -155,6 +155,10 @@ class Reminders {
         if (_on('hadith')) {
           await add(2, fajr.add(const Duration(minutes: 15)), 'hadith',
               S.t('n_hadith_title'), S.t('n_hadith_body'));
+        }
+        if (_on('quran')) {
+          await add(9, fajr.add(const Duration(minutes: 30)), 'quran',
+              S.t('n_quran_title'), S.t('n_quran_body'));
         }
         if (_on('evening')) {
           await add(3, asr.add(const Duration(minutes: 5)), 'evening',

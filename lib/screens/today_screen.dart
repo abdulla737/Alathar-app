@@ -107,9 +107,8 @@ class TodayScreen extends StatelessWidget {
           ],
 
           _HadithOfTheDayCard(
-            hadith: hadith,
-            onTap: () => Navigator.of(context).push(MaterialPageRoute(
-              builder: (_) => HadithDetailScreen(hadith: hadith),
+            onOpen: (h) => Navigator.of(context).push(MaterialPageRoute(
+              builder: (_) => HadithDetailScreen(hadith: h),
             )),
           ),
           const SizedBox(height: 16),
@@ -204,9 +203,8 @@ class TodayScreen extends StatelessWidget {
 }
 
 class _HadithOfTheDayCard extends StatelessWidget {
-  final Hadith hadith;
-  final VoidCallback onTap;
-  const _HadithOfTheDayCard({required this.hadith, required this.onTap});
+  final ValueChanged<Hadith> onOpen;
+  const _HadithOfTheDayCard({required this.onOpen});
 
   /// «ورد الحديث اليومي»: today's hadith in short, how many daily hadith
   /// you have read, and one tap to read it in full.
@@ -216,13 +214,16 @@ class _HadithOfTheDayCard extends StatelessWidget {
       listenable: Listenable.merge([AppSettings.instance, UserStore.instance]),
       builder: (context, _) {
         final user = UserStore.instance;
-        final pool = [
-          for (final h in ContentStore.instance.allHadith)
-            if (h.dailyOk && h.kind == HadithKind.hadith) h.id,
-        ];
-        final total = pool.isEmpty ? 1 : pool.length;
-        final read = user.readCountAmong(pool);
-        final doneToday = user.hasRead(hadith.id);
+        // Today's set (Settings → «الورد اليومي»: hadith per day). The card
+        // shows the first one not read yet.
+        final goal = AppSettings.instance.hadithPerDay;
+        final today = ContentStore.instance.hadithsOfToday(goal);
+        final ids = [for (final h in today) h.id];
+        final read = user.readTodayAmong(ids);
+        final total = today.length;
+        final doneToday = read >= total;
+        final hadith = today.firstWhere((h) => !user.readToday(h.id), orElse: () => today.first);
+        final onTap = () => onOpen(hadith);
         String n(int v) => S.isArabic ? _arabicDigits(v) : '$v';
         return AppCard(
           color: AppColors.green,
@@ -256,7 +257,7 @@ class _HadithOfTheDayCard extends StatelessWidget {
                                   size: 15, weight: FontWeight.w700, color: Colors.white)),
                         ),
                         if (doneToday)
-                          Pill(context.tr('hadith_done_today'),
+                          Pill(context.tr('wird_done'),
                               background: AppColors.sand,
                               foreground: const Color(0xFF3D2A08)),
                       ],
@@ -292,7 +293,7 @@ class _HadithOfTheDayCard extends StatelessWidget {
                       children: [
                         Expanded(
                           child: Text(
-                              context.tr('hadith_read_progress', {'n': n(read), 't': n(pool.length)}),
+                              context.tr('hadith_today_progress', {'n': n(read), 't': n(total)}),
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                               style: AppText.ui(size: 12, color: AppColors.onGreenMuted)),
