@@ -100,8 +100,25 @@ class HadithDetailScreen extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 16),
-            if (h.narrator.v.isNotEmpty)
-              _MetaTile(label: context.tr('narrator'), value: h.narrator.v),
+            // «الراوي» and «المصدر» (who reported / graded it, e.g. «متفق عليه»,
+            // «رواه مسلم», «صححه الألباني») — each only when it has a value.
+            if (h.narrator.v.isNotEmpty || h.fullReference.v.isNotEmpty)
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  if (h.narrator.v.isNotEmpty)
+                    Expanded(
+                        child: _MetaTile(
+                            label: context.tr('narrator'), value: h.narrator.v)),
+                  if (h.narrator.v.isNotEmpty && h.fullReference.v.isNotEmpty)
+                    const SizedBox(width: 10),
+                  if (h.fullReference.v.isNotEmpty)
+                    Expanded(
+                        child: _MetaTile(
+                            label: context.tr('source'),
+                            value: h.fullReference.v)),
+                ],
+              ),
             // Explanation and "Act on it" show only when the content has them.
             if (h.explanation.v.isNotEmpty) ...[
               const SizedBox(height: 16),
