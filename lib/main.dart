@@ -8,6 +8,7 @@ import 'data/app_settings.dart';
 import 'data/content_store.dart';
 import 'data/content_sync.dart';
 import 'data/prayer_store.dart';
+import 'data/quran.dart';
 import 'data/reminders.dart';
 import 'data/weather.dart';
 import 'data/user_store.dart';
@@ -26,6 +27,7 @@ Future<void> main() async {
   await _step('user', UserStore.instance.load);
   await _step('content', ContentStore.instance.load);
   await _step('prayer', PrayerStore.instance.load);
+  await _step('quran', QuranStore.instance.load);
 
   runApp(AlatharApp(showOnboarding: !AppSettings.instance.onboardingDone));
 
@@ -35,6 +37,8 @@ Future<void> main() async {
   } catch (e) {
     debugPrint('Weather start failed: $e');
   }
+  // The Qur'an text (bundled), ready before the Qur'an tab is opened.
+  unawaited(_step('quran text', QuranData.instance.ensureLoaded, seconds: 20));
   // Connect to Supabase, then check for new content in the background.
   unawaited(_step('supabase', ContentSync.init, seconds: 10)
       .then((_) => ContentSync.run()));

@@ -13,6 +13,7 @@ import '../widgets/audio_button.dart';
 import '../widgets/common.dart';
 import '../widgets/athkar_time_banner.dart';
 import '../widgets/prayer_card.dart';
+import '../widgets/quran_wird_card.dart';
 import '../widgets/share_card.dart';
 import 'athkar_counter_screen.dart';
 import 'friday_screen.dart';
@@ -196,62 +197,8 @@ class TodayScreen extends StatelessWidget {
           ),
           const SizedBox(height: 16),
 
-          // «العمل»: today's action from the hadith of the day.
-          ListenableBuilder(
-            listenable: UserStore.instance,
-            builder: (context, _) {
-              final done = UserStore.instance.actedToday(hadith.id);
-              final streak = UserStore.instance.streak;
-              return AppCard(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                onTap: () => onOpenTab(AppTab.act),
-                child: Row(
-                  children: [
-                    IconTile(
-                      color: done ? AppColors.greenSoft : AppColors.sandSoft,
-                      child: Icon(done ? Icons.task_alt : Icons.directions_walk,
-                          color: done ? AppColors.green : AppColors.gold),
-                    ),
-                    const SizedBox(width: 14),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                              done
-                                  ? context.tr('act_done_today')
-                                  : context.tr('act_today_label'),
-                              style: AppText.ui(
-                                  size: 12,
-                                  weight: FontWeight.w500,
-                                  color: AppColors.muted)),
-                          const SizedBox(height: 3),
-                          Text(
-                              hadith.action.v.isNotEmpty
-                                  ? hadith.action.v
-                                  : context.tr('act_fallback'),
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
-                              style: AppText.ui(
-                                  size: 14, weight: FontWeight.w600, height: 1.4)),
-                          if (streak > 0) ...[
-                            const SizedBox(height: 6),
-                            Text(context.tr('streak_days', {'n': streak}),
-                                style: AppText.ui(
-                                    size: 12,
-                                    weight: FontWeight.w600,
-                                    color: AppColors.gold)),
-                          ],
-                        ],
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    const Icon(Icons.chevron_right, color: AppColors.muted),
-                  ],
-                ),
-              );
-            },
-          ),
+          // «وردك من القرآن»: where you stopped reading; tap to continue.
+          const QuranWirdCard(),
         ],
       ),
     );

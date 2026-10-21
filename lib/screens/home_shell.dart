@@ -3,9 +3,9 @@ import 'package:flutter/material.dart';
 import '../l10n/strings.dart';
 import '../theme/app_theme.dart';
 import '../widgets/common.dart';
-import 'act_screen.dart';
 import 'athkar_screen.dart';
 import 'library_screen.dart';
+import 'quran_screen.dart';
 import 'settings_screen.dart';
 import 'today_screen.dart';
 
@@ -14,7 +14,7 @@ class AppTab {
   static const today = 0;
   static const athkar = 1;
   static const hadith = 2;
-  static const act = 3; // «العمل» (was the Tawheed path)
+  static const quran = 3; // «القرآن» (replaced «العمل»)
   static const more = 4;
 }
 
@@ -37,7 +37,7 @@ class _HomeShellState extends State<HomeShell> {
       TodayScreen(onOpenTab: _goTo),
       const AthkarScreen(),
       const LibraryScreen(),
-      const ActScreen(),
+      const QuranScreen(),
       const SettingsScreen(),
     ];
 
@@ -66,9 +66,9 @@ class _HomeShellState extends State<HomeShell> {
               label: context.tr('tab_hadith'),
             ),
             NavigationDestination(
-              icon: const Icon(Icons.check_circle_outline),
-              selectedIcon: const Icon(Icons.check_circle),
-              label: context.tr('tab_act'),
+              icon: const Icon(Icons.auto_stories_outlined),
+              selectedIcon: const Icon(Icons.auto_stories),
+              label: context.tr('tab_quran'),
             ),
             NavigationDestination(
               icon: const Icon(Icons.settings_outlined),
