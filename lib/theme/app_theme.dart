@@ -47,6 +47,9 @@ class AppColors {
   static const switchOff = _Adaptive(0xFFC9C4B7, Color(0xFF4B5550));
   static const onGreenMuted = Color(0xFFC9D6D0);
   static const onGreenBody = Color(0xFFE4ECE8);
+  // Mushaf pages: paper and the gold double-line border
+  static const paper = _Adaptive(0xFFFBF6E8, Color(0xFF17140F));
+  static const mushafLine = Color(0xFFB88A2E);
   // Prayer card (night blue with gold)
   static const night = Color(0xFF1F3A5F);
   static const nightGold = Color(0xFFF2C14E);

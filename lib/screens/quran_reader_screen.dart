@@ -1,5 +1,3 @@
-import 'dart:math' as math;
-
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -8,6 +6,7 @@ import 'package:share_plus/share_plus.dart';
 import '../data/quran.dart';
 import '../l10n/strings.dart';
 import '../theme/app_theme.dart';
+import '../widgets/quran_ornaments.dart';
 import '../widgets/text_size_buttons.dart';
 
 /// Numbers in the app language: «١٢» in Arabic, "12" otherwise.
@@ -96,12 +95,13 @@ int _firstLetterEnd(String text, int start, int end) {
 /// Verse end marker: ﴿١٢﴾.
 String ayahMarker(int ayah) => '﴿${arabicDigits(ayah)}﴾';
 
-/// Reads one surah: banner, Basmala and the verses as flowing text.
-/// A− / A+ at the top change the size (remembered). Tap a verse to
-/// bookmark, copy or share it. The place you stop is saved automatically.
+/// The Qur'an as mushaf pages (604, Madinah layout): swipe to turn pages.
+/// Each surah starts with an arabesque banner; verse numbers sit in
+/// medallions. A− / A+ change the size (remembered). Tap a verse to
+/// bookmark, copy or share it. The page you stop on is saved automatically.
 class QuranReaderScreen extends StatefulWidget {
   final int surah;
-  final int ayah; // verse to open at
+  final int ayah; // verse to open at (its page)
   const QuranReaderScreen({super.key, required this.surah, this.ayah = 1});
 
   @override
@@ -109,34 +109,32 @@ class QuranReaderScreen extends StatefulWidget {
 }
 
 class _QuranReaderScreenState extends State<QuranReaderScreen> {
-  static const _perChunk = 5; // verses per paragraph block
-  final _centerKey = GlobalKey();
-  final _viewportKey = GlobalKey();
-  final Map<int, GlobalKey> _chunkKeys = {};
+  final _q = QuranData.instance;
+  late final int _openAyah = widget.ayah.clamp(1, _q.surah(widget.surah).count);
+  late int _page = _q.pageOf(widget.surah, _openAyah);
+  late final PageController _pages = PageController(initialPage: _page - 1);
   final Map<int, TapGestureRecognizer> _taps = {};
-  late final Surah _s = QuranData.instance.surah(widget.surah);
-  int? _selected;
-
-  int get _chunkCount => (_s.count + _perChunk - 1) ~/ _perChunk;
-
-  /// Items: 0 = banner, 1.._chunkCount = verse blocks, last = next/previous.
-  int get _itemCount => _chunkCount + 2;
-
-  /// The list starts at the block holding the verse to open.
-  late final int _startItem =
-      widget.ayah <= 1 ? 0 : 1 + (widget.ayah.clamp(1, _s.count) - 1) ~/ _perChunk;
+  int? _selected; // overall index of the tapped verse
 
   @override
   void initState() {
     super.initState();
-    QuranStore.instance.setPosition(_s.number, widget.ayah.clamp(1, _s.count));
+    QuranStore.instance.setPosition(widget.surah, _openAyah);
     _loadTajweed();
   }
 
+  @override
+  void dispose() {
+    _pages.dispose();
+    for (final t in _taps.values) {
+      t.dispose();
+    }
+    super.dispose();
+  }
+
   void _loadTajweed() {
-    final q = QuranData.instance;
-    if (!QuranStore.instance.tajweed || q.hasTajweed) return;
-    q.ensureTajweed().then((_) {
+    if (!QuranStore.instance.tajweed || _q.hasTajweed) return;
+    _q.ensureTajweed().then((_) {
       if (mounted) setState(() {});
     }, onError: (Object e) => debugPrint('Tajweed not loaded: $e'));
   }
@@ -146,91 +144,29 @@ class _QuranReaderScreenState extends State<QuranReaderScreen> {
       context: context,
       backgroundColor: AppColors.surface,
       showDragHandle: true,
+      isScrollControlled: true,
       builder: (_) => const _TajweedSheet(),
     ).then((_) => _loadTajweed());
   }
 
-  @override
-  void dispose() {
-    for (final t in _taps.values) {
-      t.dispose();
-    }
-    super.dispose();
+  void _onPageChanged(int index) {
+    setState(() => _page = index + 1);
+    final (s, a) = _q.ayatOnPage(_page).first;
+    QuranStore.instance.setPosition(s, a);
   }
 
-  TapGestureRecognizer _tap(int ayah) =>
-      _taps[ayah] ??= TapGestureRecognizer()..onTap = () => _onAyahTap(ayah);
+  TapGestureRecognizer _tap(int s, int a) =>
+      _taps[_q.indexOf(s, a)] ??= TapGestureRecognizer()..onTap = () => _onAyahTap(s, a);
 
-  Future<void> _onAyahTap(int ayah) async {
-    setState(() => _selected = ayah);
+  Future<void> _onAyahTap(int s, int a) async {
+    setState(() => _selected = _q.indexOf(s, a));
     await showModalBottomSheet<void>(
       context: context,
       backgroundColor: AppColors.surface,
       showDragHandle: true,
-      builder: (_) => _AyahSheet(surah: _s, ayah: ayah),
+      builder: (_) => _AyahSheet(surah: _q.surah(s), ayah: a),
     );
     if (mounted) setState(() => _selected = null);
-  }
-
-  /// Saves the first verse block at the top of the screen as the place to
-  /// continue from.
-  void _savePosition() {
-    final viewport = _viewportKey.currentContext?.findRenderObject() as RenderBox?;
-    if (viewport == null || !viewport.attached) return;
-    final top = viewport.localToGlobal(Offset.zero).dy;
-    int? best;
-    for (final e in _chunkKeys.entries) {
-      final box = e.value.currentContext?.findRenderObject() as RenderBox?;
-      if (box == null || !box.attached || !box.hasSize) continue;
-      final y = box.localToGlobal(Offset.zero).dy;
-      final bottom = y + box.size.height;
-      if (bottom > top + 24 && (best == null || e.key < best)) best = e.key;
-    }
-    final ayah = best == null ? 1 : best * _perChunk + 1;
-    QuranStore.instance.setPosition(_s.number, ayah.clamp(1, _s.count));
-  }
-
-  Widget _item(BuildContext context, int i, double size) {
-    if (i == 0) return _Banner(surah: _s, size: size);
-    if (i == _itemCount - 1) return _Footer(surah: _s);
-    return _chunk(i - 1, size);
-  }
-
-  Widget _chunk(int c, double size) {
-    final store = QuranStore.instance;
-    final first = c * _perChunk + 1;
-    final last = math.min(first + _perChunk - 1, _s.count);
-    final spans = <InlineSpan>[];
-    for (var a = first; a <= last; a++) {
-      final selected = _selected == a;
-      final saved = store.isBookmarked(_s.number, a);
-      final highlight = selected ? AppColors.greenSoft : null;
-      spans.addAll(tajweedSpans(
-        _s.ayat[a - 1],
-        store.tajweed ? QuranData.instance.tajweedOf(_s.number, a) : const [],
-        recognizer: _tap(a),
-        background: highlight,
-      ));
-      spans.add(TextSpan(
-        text: ' ${ayahMarker(a)} ',
-        recognizer: _tap(a),
-        style: TextStyle(
-          color: saved ? AppColors.green : AppColors.gold,
-          backgroundColor: highlight,
-          fontWeight: saved ? FontWeight.w700 : FontWeight.w400,
-        ),
-      ));
-    }
-    return Padding(
-      key: _chunkKeys[c] ??= GlobalKey(),
-      padding: const EdgeInsets.symmetric(horizontal: 20),
-      child: Text.rich(
-        TextSpan(children: spans),
-        textAlign: TextAlign.justify,
-        textDirection: TextDirection.rtl,
-        style: quranStyle(size),
-      ),
-    );
   }
 
   @override
@@ -240,12 +176,15 @@ class _QuranReaderScreenState extends State<QuranReaderScreen> {
       builder: (context, _) {
         final store = QuranStore.instance;
         final size = store.size;
+        final (s, _) = _q.ayatOnPage(_page).first;
+        final surah = _q.surah(s);
         return Scaffold(
+          backgroundColor: AppColors.ground,
           appBar: AppBar(
             backgroundColor: AppColors.ground,
             surfaceTintColor: Colors.transparent,
             titleSpacing: 0,
-            title: Text(S.isArabic ? 'سورة ${_s.name}' : _s.translit,
+            title: Text(S.isArabic ? 'سورة ${surah.name}' : surah.translit,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: AppText.ui(size: 16, weight: FontWeight.w700)),
@@ -264,134 +203,128 @@ class _QuranReaderScreenState extends State<QuranReaderScreen> {
               const SizedBox(width: 12),
             ],
           ),
-          body: NotificationListener<ScrollEndNotification>(
-            onNotification: (_) {
-              _savePosition();
-              return false;
-            },
-            child: CustomScrollView(
-              key: _viewportKey,
-              center: _centerKey,
-              slivers: [
-                // Blocks above the opening verse (built upwards).
-                SliverList(
-                  delegate: SliverChildBuilderDelegate(
-                    (context, i) => _item(context, _startItem - 1 - i, size),
-                    childCount: _startItem,
-                  ),
-                ),
-                SliverList(
-                  key: _centerKey,
-                  delegate: SliverChildBuilderDelegate(
-                    (context, i) => _item(context, _startItem + i, size),
-                    childCount: _itemCount - _startItem,
-                  ),
-                ),
-              ],
+          // Pages turn right-to-left like a printed mushaf, in every language.
+          body: Directionality(
+            textDirection: TextDirection.rtl,
+            child: PageView.builder(
+              controller: _pages,
+              itemCount: _q.pageCount,
+              onPageChanged: _onPageChanged,
+              itemBuilder: (context, i) => _buildPage(i + 1, size, OrnamentPalette.of(store.ornament)),
             ),
           ),
         );
       },
     );
   }
-}
 
-/// «سورة الكهف» banner, its details and the Basmala.
-class _Banner extends StatelessWidget {
-  final Surah surah;
-  final double size;
-  const _Banner({required this.surah, required this.size});
+  /// One mushaf page: double-line border, surah and juz at the top, the
+  /// verses (with banners where a surah starts) and the page number.
+  Widget _buildPage(int page, double size, OrnamentPalette palette) {
+    final store = QuranStore.instance;
+    final ayat = _q.ayatOnPage(page);
+    final (firstS, firstA) = ayat.first;
+    const gold = AppColors.mushafLine;
 
-  @override
-  Widget build(BuildContext context) {
-    final q = QuranData.instance;
-    final meta = [
-      context.tr(surah.medinan ? 'quran_medinan' : 'quran_meccan'),
-      context.tr('quran_ayat', {'n': localNum(surah.count)}),
-      context.tr('quran_juz', {'n': localNum(q.juzOf(surah.number, 1))}),
-      context.tr('quran_page', {'n': localNum(q.pageOf(surah.number, 1))}),
-    ].join(' · ');
+    final body = <Widget>[];
+    var spans = <InlineSpan>[];
+    void flush() {
+      if (spans.isEmpty) return;
+      body.add(Text.rich(
+        TextSpan(children: spans),
+        textAlign: TextAlign.justify,
+        textDirection: TextDirection.rtl,
+        style: quranStyle(size),
+      ));
+      spans = <InlineSpan>[];
+    }
+
+    for (final (s, a) in ayat) {
+      final surah = _q.surah(s);
+      if (a == 1) {
+        flush();
+        body.add(Padding(
+          padding: EdgeInsets.only(top: body.isEmpty ? 0 : 10, bottom: 4),
+          child: SurahBanner(
+              title: 'سُورَةُ ${surah.name}', palette: palette, fontSize: size * 0.8),
+        ));
+        if (surah.showsBasmala) {
+          body.add(Text(_q.basmala,
+              textAlign: TextAlign.center,
+              textDirection: TextDirection.rtl,
+              style: quranStyle(size * 0.92, color: palette.text, height: 1.9)));
+        }
+      }
+      final index = _q.indexOf(s, a);
+      final highlight = _selected == index ? AppColors.greenSoft : null;
+      spans.addAll(tajweedSpans(
+        surah.ayat[a - 1],
+        store.tajweed ? _q.tajweedOf(s, a) : const [],
+        recognizer: _tap(s, a),
+        background: highlight,
+      ));
+      spans.add(const TextSpan(text: ' '));
+      spans.add(WidgetSpan(
+        alignment: PlaceholderAlignment.middle,
+        child: GestureDetector(
+          onTap: () => _onAyahTap(s, a),
+          child: AyahMedallion(
+            number: arabicDigits(a),
+            size: size * 1.15,
+            palette: palette,
+            saved: store.isBookmarked(s, a),
+          ),
+        ),
+      ));
+      spans.add(const TextSpan(text: ' '));
+    }
+    flush();
+
+    final header = AppText.ui(size: 12, weight: FontWeight.w700, color: AppColors.goldDark);
     return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 8, 20, 4),
-      child: Column(
-        children: [
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
+      padding: const EdgeInsets.fromLTRB(10, 4, 10, 12),
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          color: AppColors.paper,
+          borderRadius: BorderRadius.circular(6),
+          border: Border.all(color: gold, width: 1.6),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(3),
+          child: DecoratedBox(
             decoration: BoxDecoration(
-              color: AppColors.sandSoft,
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: AppColors.gold, width: 1.5),
+              border: Border.all(color: gold, width: 0.7),
+              borderRadius: BorderRadius.circular(3),
             ),
-            child: Column(
-              children: [
-                Text('سُورَةُ ${surah.name}',
-                    textAlign: TextAlign.center,
-                    textDirection: TextDirection.rtl,
-                    style: quranStyle(24, color: AppColors.goldDark, height: 1.6)),
-                Text(meta,
-                    textAlign: TextAlign.center,
-                    style: AppText.ui(size: 12, color: AppColors.muted)),
-              ],
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(14, 8, 14, 6),
+              child: Column(
+                children: [
+                  Row(
+                    children: [
+                      Expanded(child: Text(_q.surah(firstS).name, style: header)),
+                      Text(context.tr('quran_juz', {'n': localNum(_q.juzOf(firstS, firstA))}),
+                          style: header),
+                    ],
+                  ),
+                  const SizedBox(height: 4),
+                  Expanded(
+                    child: SingleChildScrollView(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: body,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(arabicDigits(page),
+                      textAlign: TextAlign.center,
+                      style: AppText.ui(size: 13, weight: FontWeight.w700, color: AppColors.goldDark)),
+                ],
+              ),
             ),
           ),
-          if (surah.showsBasmala) ...[
-            const SizedBox(height: 10),
-            Text(q.basmala,
-                textAlign: TextAlign.center,
-                textDirection: TextDirection.rtl,
-                style: quranStyle(size * 0.9, color: AppColors.green, height: 1.9)),
-          ],
-          const SizedBox(height: 4),
-        ],
-      ),
-    );
-  }
-}
-
-/// Previous / next surah at the end of a surah.
-class _Footer extends StatelessWidget {
-  final Surah surah;
-  const _Footer({required this.surah});
-
-  void _open(BuildContext context, int n) => Navigator.of(context).pushReplacement(
-        MaterialPageRoute(builder: (_) => QuranReaderScreen(surah: n)),
-      );
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 20, 20, 32),
-      child: Row(
-        children: [
-          if (surah.number > 1)
-            Expanded(
-              child: OutlinedButton(
-                onPressed: () => _open(context, surah.number - 1),
-                style: OutlinedButton.styleFrom(
-                  minimumSize: const Size(0, 48),
-                  side: const BorderSide(color: AppColors.line),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                ),
-                child: Text(context.tr('quran_prev'),
-                    style: AppText.ui(size: 14, weight: FontWeight.w600, color: AppColors.green)),
-              ),
-            ),
-          if (surah.number > 1 && surah.number < 114) const SizedBox(width: 10),
-          if (surah.number < 114)
-            Expanded(
-              child: FilledButton(
-                onPressed: () => _open(context, surah.number + 1),
-                style: FilledButton.styleFrom(
-                  backgroundColor: AppColors.green,
-                  minimumSize: const Size(0, 48),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                ),
-                child: Text(context.tr('quran_next'),
-                    style: AppText.ui(size: 14, weight: FontWeight.w700, color: Colors.white)),
-              ),
-            ),
-        ],
+        ),
       ),
     );
   }
@@ -523,6 +456,37 @@ class _TajweedSheet extends StatelessWidget {
                 title: Text(context.tr('tajweed_switch'),
                     style: AppText.ui(size: 15, weight: FontWeight.w600)),
               ),
+              const Divider(color: AppColors.divider),
+              Text(context.tr('quran_ornament'),
+                  style: AppText.ui(size: 15, weight: FontWeight.w600)),
+              const SizedBox(height: 8),
+              Row(
+                children: [
+                  for (var i = 0; i < OrnamentPalette.all.length; i++)
+                    Padding(
+                      padding: const EdgeInsetsDirectional.only(end: 10),
+                      child: GestureDetector(
+                        onTap: () => store.setOrnament(i),
+                        child: Container(
+                          width: 38,
+                          height: 38,
+                          decoration: BoxDecoration(
+                            color: OrnamentPalette.all[i].band,
+                            shape: BoxShape.circle,
+                            border: Border.all(
+                              color: store.ornament == i ? AppColors.ink : AppColors.line,
+                              width: store.ornament == i ? 3 : 1,
+                            ),
+                          ),
+                          child: store.ornament == i
+                              ? const Icon(Icons.check, color: Colors.white, size: 20)
+                              : null,
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+              const SizedBox(height: 8),
               const Divider(color: AppColors.divider),
               for (final (color, key) in items)
                 Padding(

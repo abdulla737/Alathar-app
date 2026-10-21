@@ -67,6 +67,10 @@ class QuranData {
       for (final j in (data['j'] as List)) ((j as List)[0] as int, j[1] as int),
     ];
     surahs = list;
+    _pageFirst = [
+      for (var i = 0; i < _pages.length; i++)
+        if (i == 0 || _pages[i] != _pages[i - 1]) i,
+    ];
     _sajda = {for (final j in (data['sj'] as List)) indexOf((j as List)[0] as int, j[1] as int)};
   }
 
@@ -81,6 +85,33 @@ class QuranData {
   int indexOf(int surah, int ayah) => surahs[surah - 1].firstIndex + ayah - 1;
 
   int pageOf(int surah, int ayah) => _pages[indexOf(surah, ayah)];
+
+  // ---------------------------------------------------------------- Pages
+  List<int> _pageFirst = const []; // first verse (overall index) of each page
+
+  /// Pages of the Madinah mushaf (604).
+  int get pageCount => _pageFirst.length;
+
+  /// (surah, ayah) of a verse by its overall index (0-based).
+  (int, int) verseAt(int index) {
+    var lo = 0, hi = surahs.length - 1;
+    while (lo < hi) {
+      final mid = (lo + hi + 1) ~/ 2;
+      if (surahs[mid].firstIndex <= index) {
+        lo = mid;
+      } else {
+        hi = mid - 1;
+      }
+    }
+    return (lo + 1, index - surahs[lo].firstIndex + 1);
+  }
+
+  /// The verses on a page (1-based), in order.
+  List<(int, int)> ayatOnPage(int page) {
+    final start = _pageFirst[page - 1];
+    final end = page < pageCount ? _pageFirst[page] : totalAyat;
+    return [for (var i = start; i < end; i++) verseAt(i)];
+  }
 
   int juzOf(int surah, int ayah) {
     final i = indexOf(surah, ayah);
@@ -139,8 +170,11 @@ class QuranStore extends ChangeNotifier {
   /// Colour the text by tajweed rules (switch on the reading page).
   bool tajweed = true;
 
+  /// Colour of the surah banners and verse medallions (0 = green).
+  int ornament = 0;
+
   /// Qur'an text size on the reading page (its own A− / A+).
-  double size = 28;
+  double size = 24;
   static const minSize = 20.0;
   static const maxSize = 48.0;
 
@@ -149,6 +183,7 @@ class QuranStore extends ChangeNotifier {
   static const _kBookmarks = 'quran_bookmarks';
   static const _kSize = 'quran_size';
   static const _kTajweed = 'quran_tajweed';
+  static const _kOrnament = 'quran_ornament';
 
   Future<void> load() async {
     final p = _prefs = await SharedPreferences.getInstance();
@@ -157,8 +192,9 @@ class QuranStore extends ChangeNotifier {
     bookmarks
       ..clear()
       ..addAll(p.getStringList(_kBookmarks) ?? const []);
-    size = (p.getDouble(_kSize) ?? 28).clamp(minSize, maxSize);
+    size = (p.getDouble(_kSize) ?? 24).clamp(minSize, maxSize);
     tajweed = p.getBool(_kTajweed) ?? true;
+    ornament = p.getInt(_kOrnament) ?? 0;
   }
 
   void setPosition(int surah, int ayah) {
@@ -191,6 +227,12 @@ class QuranStore extends ChangeNotifier {
   void setTajweed(bool value) {
     tajweed = value;
     _prefs?.setBool(_kTajweed, value);
+    notifyListeners();
+  }
+
+  void setOrnament(int value) {
+    ornament = value;
+    _prefs?.setInt(_kOrnament, value);
     notifyListeners();
   }
 
