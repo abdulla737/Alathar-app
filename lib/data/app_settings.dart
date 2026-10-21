@@ -48,8 +48,15 @@ class AppSettings extends ChangeNotifier {
   static const maxHadithPerDay = 10;
   int quranPagesPerDay = 2;
   static const maxQuranPagesPerDay = 40;
-  int quranFromSurah = 1;
-  int quranToSurah = 114;
+  /// «ختمة» (the whole mushaf, page 1 to 604; default) or a custom range of
+  /// surahs ([rangeFrom] … [rangeTo]).
+  bool quranKhatma = true;
+  int rangeFrom = 1;
+  int rangeTo = 114;
+
+  /// The surahs the daily reading covers now (whole Qur'an for a khatma).
+  int get quranFromSurah => quranKhatma ? 1 : rangeFrom;
+  int get quranToSurah => quranKhatma ? 114 : rangeTo;
 
   String translation = 'English';
   bool onboardingDone = false;
@@ -75,6 +82,7 @@ class AppSettings extends ChangeNotifier {
   static const _kQuranPages = 'goal_quran_pages';
   static const _kQuranFrom = 'goal_quran_from';
   static const _kQuranTo = 'goal_quran_to';
+  static const _kQuranKhatma = 'goal_quran_khatma';
   static const _kOnboarding = 'onboarding_done';
   static String _kReminder(String key) => 'reminder_$key';
 
@@ -91,8 +99,9 @@ class AppSettings extends ChangeNotifier {
     translation = p.getString(_kTranslation) ?? 'English';
     hadithPerDay = (p.getInt(_kHadithPerDay) ?? 1).clamp(1, maxHadithPerDay);
     quranPagesPerDay = (p.getInt(_kQuranPages) ?? 2).clamp(1, maxQuranPagesPerDay);
-    quranFromSurah = (p.getInt(_kQuranFrom) ?? 1).clamp(1, 114);
-    quranToSurah = (p.getInt(_kQuranTo) ?? 114).clamp(quranFromSurah, 114);
+    quranKhatma = p.getBool(_kQuranKhatma) ?? true;
+    rangeFrom = (p.getInt(_kQuranFrom) ?? 1).clamp(1, 113);
+    rangeTo = (p.getInt(_kQuranTo) ?? 114).clamp(rangeFrom + 1, 114);
     onboardingDone = p.getBool(_kOnboarding) ?? false;
     for (final key in reminders.keys.toList()) {
       reminders[key] = p.getBool(_kReminder(key)) ?? reminders[key]!;
@@ -152,12 +161,18 @@ class AppSettings extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// The surahs the daily Qur'an reading covers ([from] ≤ [to]).
+  void setQuranKhatma(bool value) {
+    quranKhatma = value;
+    _prefs?.setBool(_kQuranKhatma, value);
+    notifyListeners();
+  }
+
+  /// A custom range of surahs: [to] comes after [from].
   void setQuranRange(int from, int to) {
-    quranFromSurah = from.clamp(1, 114);
-    quranToSurah = to.clamp(quranFromSurah, 114);
-    _prefs?.setInt(_kQuranFrom, quranFromSurah);
-    _prefs?.setInt(_kQuranTo, quranToSurah);
+    rangeFrom = from.clamp(1, 113);
+    rangeTo = to.clamp(rangeFrom + 1, 114);
+    _prefs?.setInt(_kQuranFrom, rangeFrom);
+    _prefs?.setInt(_kQuranTo, rangeTo);
     notifyListeners();
   }
 

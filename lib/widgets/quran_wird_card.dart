@@ -35,8 +35,6 @@ class QuranWirdCard extends StatelessWidget {
     final fromSurah = settings.quranFromSurah;
     final toSurah = settings.quranToSurah;
     final lastOfRange = q.surah(toSurah);
-    final startIndex = q.indexOf(fromSurah, 1);
-    final endIndex = q.indexOf(toSurah, lastOfRange.count);
 
     // Today's pages: from today's first page (or where yesterday's reading
     // ended) for the daily number of pages, inside the chosen surahs.
@@ -69,10 +67,13 @@ class QuranWirdCard extends StatelessWidget {
     final goal = settings.quranPagesPerDay;
     final readToday = store.pagesReadToday;
     final dayProgress = (readToday / goal).clamp(0.0, 1.0);
-    final rangeTotal = endIndex - startIndex + 1;
-    final rangePercent =
-        started ? ((q.indexOf(s, ayah) - startIndex + 1) * 100 / rangeTotal).round() : 0;
     final done = readToday >= goal;
+
+    // Khatma (or chosen range) completion: pages finished in this round.
+    final rangePages = toPage - fromPage + 1;
+    final pagesDone = store.pagesDone(fromPage, toPage);
+    final cycleProgress = (pagesDone / rangePages).clamp(0.0, 1.0);
+    final cyclePercent = (cycleProgress * 100).floor();
 
     void open() {
       store.beginWird(startPage);
@@ -81,10 +82,7 @@ class QuranWirdCard extends StatelessWidget {
       ));
     }
 
-    final fullQuran = fromSurah == 1 && toSurah == 114;
-    final rangeLabel = fullQuran
-        ? context.tr('quran_progress', {'p': localNum(rangePercent)})
-        : '${q.surah(fromSurah).name} – ${q.surah(toSurah).name} · ${localNum(rangePercent)}٪';
+    final khatma = settings.quranKhatma;
 
     return AppCard(
       radius: 22,
@@ -118,19 +116,44 @@ class QuranWirdCard extends StatelessWidget {
               textDirection: TextDirection.rtl,
               style: quranStyle(20, color: AppColors.body, height: 1.9)),
           const SizedBox(height: 8),
-          ProgressLine(value: dayProgress, height: 5),
+          // Two bars side by side: today's pages, and the khatma / range.
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: _Bar(
+                  value: dayProgress,
+                  color: AppColors.green,
+                  label: context.tr('quran_today_progress',
+                      {'n': localNum(readToday.clamp(0, goal)), 't': localNum(goal)}),
+                ),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: _Bar(
+                  value: cycleProgress,
+                  color: AppColors.gold,
+                  label: context.tr(khatma ? 'quran_khatma_progress' : 'quran_range_progress', {
+                    'p': localNum(cyclePercent),
+                    'n': localNum(pagesDone),
+                    't': localNum(rangePages),
+                  }),
+                ),
+              ),
+            ],
+          ),
+          if (store.khatmasDone > 0 && khatma) ...[
+            const SizedBox(height: 4),
+            Text(context.tr('quran_khatmas_done', {'n': localNum(store.khatmasDone)}),
+                style: AppText.ui(size: 11, color: AppColors.gold)),
+          ],
           const SizedBox(height: 6),
-          Text(
-              context.tr('quran_today_progress',
-                  {'n': localNum(readToday.clamp(0, goal)), 't': localNum(goal)}),
-              style: AppText.ui(size: 12, weight: FontWeight.w600, color: AppColors.green)),
-          const SizedBox(height: 4),
           Row(
             children: [
               Expanded(
                 child: Text(
                     started
-                        ? '${S.isArabic ? 'سورة ${surah.name}' : surah.translit} · ${context.tr('quran_ayah', {'n': localNum(ayah)})} · $rangeLabel'
+                        ? '${S.isArabic ? 'سورة ${surah.name}' : surah.translit} · ${context.tr('quran_ayah', {'n': localNum(ayah)})}'
                         : context.tr('quran_start_from', {'s': q.surah(fromSurah).name}),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
@@ -146,4 +169,24 @@ class QuranWirdCard extends StatelessWidget {
       ),
     );
   }
+}
+
+/// A small progress bar with its caption underneath.
+class _Bar extends StatelessWidget {
+  final double value;
+  final Color color;
+  final String label;
+  const _Bar({required this.value, required this.color, required this.label});
+
+  @override
+  Widget build(BuildContext context) => Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          ProgressLine(value: value, height: 5, color: color),
+          const SizedBox(height: 5),
+          Text(label,
+              maxLines: 2,
+              style: AppText.ui(size: 11.5, weight: FontWeight.w600, color: color)),
+        ],
+      );
 }

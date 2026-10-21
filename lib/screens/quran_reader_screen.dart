@@ -128,7 +128,9 @@ class _QuranReaderScreenState extends State<QuranReaderScreen> {
   int get _lastPage {
     if (!_wird) return _q.pageCount;
     final end = _firstPage + AppSettings.instance.quranPagesPerDay - 1;
-    return end.clamp(_firstPage, _rangeLastPage());
+    final rangeEnd = _rangeLastPage();
+    // Never below the first page, even if the range changed meanwhile.
+    return end.clamp(_firstPage, rangeEnd < _firstPage ? _firstPage : rangeEnd);
   }
 
   /// Last page of the chosen surahs (Settings → «الورد اليومي»).
@@ -142,11 +144,19 @@ class _QuranReaderScreenState extends State<QuranReaderScreen> {
   /// Reached the last page of today's reading: tomorrow starts after it
   /// (back to the first chosen surah after the last one).
   void _checkWirdEnd(int page) {
-    if (!_wird || page != _lastPage) return;
-    final next = page + 1 > _rangeLastPage()
-        ? _q.pageOf(AppSettings.instance.quranFromSurah, 1)
-        : page + 1;
-    QuranStore.instance.finishWird(next);
+    if (!_wird) return;
+    final store = QuranStore.instance;
+    final from = _q.pageOf(AppSettings.instance.quranFromSurah, 1);
+    final to = _rangeLastPage();
+    store.recordProgress(page, from, to);
+    if (page != _lastPage) return;
+    if (page + 1 > to) {
+      // The whole khatma / range is done: start again from its first page.
+      store.completeCycle(from, to);
+      store.finishWird(from);
+    } else {
+      store.finishWird(page + 1);
+    }
   }
   final Map<int, TapGestureRecognizer> _taps = {};
   int? _selected; // overall index of the tapped verse
@@ -154,9 +164,14 @@ class _QuranReaderScreenState extends State<QuranReaderScreen> {
   @override
   void initState() {
     super.initState();
-    QuranStore.instance.setPosition(widget.surah, _openAyah);
-    _countPage(_page);
-    _checkWirdEnd(_page);
+    // Saved after the first frame: changing the store while this page is
+    // being built would stop it from opening.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      QuranStore.instance.setPosition(widget.surah, _openAyah);
+      _countPage(_page);
+      _checkWirdEnd(_page);
+    });
     _loadTajweed();
     // Briefly highlight the verse that was opened (juz / bookmark / search).
     if (_openAyah > 1) {

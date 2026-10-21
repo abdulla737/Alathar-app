@@ -179,6 +179,13 @@ class QuranStore extends ChangeNotifier {
   int? _wirdStart;
   int? _wirdNext;
 
+  /// Furthest page reached in the daily reading of the current khatma /
+  /// range ("from-to" of pages), and how many times it was completed.
+  String _cycleKey = '';
+  int _furthest = 0;
+  int khatmasDone = 0;
+  String _completedDay = ''; // a khatma is counted once, even if re-read
+
   /// Mushaf pages read today (daily-goal progress); reset at midnight.
   final Set<int> _pagesToday = {};
   String _pagesDay = '';
@@ -196,6 +203,7 @@ class QuranStore extends ChangeNotifier {
   static const _kOrnament = 'quran_ornament';
   static const _kPagesToday = 'quran_pages_today'; // "YYYY-MM-DD:1,2"
   static const _kWird = 'quran_wird'; // "YYYY-MM-DD|start|next"
+  static const _kCycle = 'quran_cycle'; // "from-to|furthest|done|day"
 
   Future<void> load() async {
     final p = _prefs = await SharedPreferences.getInstance();
@@ -212,6 +220,13 @@ class QuranStore extends ChangeNotifier {
       _wirdDay = w[0];
       _wirdStart = int.tryParse(w[1]);
       _wirdNext = int.tryParse(w[2]);
+    }
+    final c = (p.getString(_kCycle) ?? '').split('|');
+    if (c.length >= 3) {
+      _cycleKey = c[0];
+      _furthest = int.tryParse(c[1]) ?? 0;
+      khatmasDone = int.tryParse(c[2]) ?? 0;
+      if (c.length >= 4) _completedDay = c[3];
     }
     final pt = p.getString(_kPagesToday) ?? '';
     final colon = pt.indexOf(':');
@@ -307,6 +322,44 @@ class QuranStore extends ChangeNotifier {
     if (_wirdNext == nextPage) return;
     _wirdNext = nextPage;
     _saveWird();
+    notifyListeners();
+  }
+
+  void _saveCycle() =>
+      _prefs?.setString(_kCycle, '$_cycleKey|$_furthest|$khatmasDone|$_completedDay');
+
+  /// Pages of [from]..[to] completed in the current khatma / range (0 when
+  /// the range changed).
+  int pagesDone(int from, int to) {
+    if (_cycleKey != '$from-$to') return 0;
+    return (_furthest - from + 1).clamp(0, to - from + 1);
+  }
+
+  /// A page of [from]..[to] was read in the daily reading.
+  void recordProgress(int page, int from, int to) {
+    final key = '$from-$to';
+    if (_cycleKey != key) {
+      _cycleKey = key;
+      _furthest = 0;
+    }
+    if (page <= _furthest || page < from || page > to) return;
+    // Re-reading on the day the khatma was finished: the next one starts
+    // tomorrow.
+    if (_completedDay == _day(DateTime.now())) return;
+    _furthest = page;
+    _saveCycle();
+    notifyListeners();
+  }
+
+  /// The last page of the range was read: one more khatma, start again.
+  void completeCycle(int from, int to) {
+    final today = _day(DateTime.now());
+    if (_completedDay == today) return;
+    _completedDay = today;
+    _cycleKey = '$from-$to';
+    _furthest = 0;
+    khatmasDone++;
+    _saveCycle();
     notifyListeners();
   }
 

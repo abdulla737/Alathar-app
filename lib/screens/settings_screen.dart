@@ -330,42 +330,103 @@ class _QuranRangeRows extends StatelessWidget {
   }
 
   Widget _rows(BuildContext context, AppSettings settings, QuranData q) {
-        if (!q.isLoaded) return const SizedBox(height: 0);
-        String label(Surah s) =>
-            '${S.isArabic ? arabicDigits(s.number) : s.number}. ${S.isArabic ? s.name : s.translit}';
-        Widget row(String title, int value, int min, ValueChanged<int> onChanged) => Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: Text(title, style: AppText.ui(size: 15, weight: FontWeight.w600)),
-                  ),
-                  DropdownButton<int>(
-                    value: value,
-                    underline: const SizedBox.shrink(),
-                    borderRadius: BorderRadius.circular(12),
-                    menuMaxHeight: 420,
-                    style: AppText.ui(size: 14),
-                    items: [
-                      for (final s in q.surahs)
-                        if (s.number >= min)
-                          DropdownMenuItem(value: s.number, child: Text(label(s))),
-                    ],
-                    onChanged: (v) {
-                      if (v != null) onChanged(v);
-                    },
-                  ),
-                ],
+    if (!q.isLoaded) return const SizedBox(height: 0);
+    String nn(int n) => S.isArabic ? arabicDigits(n) : '$n';
+    String label(Surah s) => '${nn(s.number)}. ${S.isArabic ? s.name : s.translit}';
+
+    Widget choice(String text, bool selected, VoidCallback onTap) => Expanded(
+          child: GestureDetector(
+            onTap: onTap,
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 160),
+              padding: const EdgeInsets.symmetric(vertical: 9),
+              decoration: BoxDecoration(
+                color: selected ? AppColors.surface : Colors.transparent,
+                borderRadius: BorderRadius.circular(12),
               ),
-            );
-        return Column(
-          children: [
-            row(context.tr('wird_from_surah'), settings.quranFromSurah, 1,
-                (v) => settings.setQuranRange(v, v > settings.quranToSurah ? v : settings.quranToSurah)),
-            row(context.tr('wird_to_surah'), settings.quranToSurah, settings.quranFromSurah,
-                (v) => settings.setQuranRange(settings.quranFromSurah, v)),
-          ],
+              child: Text(text,
+                  textAlign: TextAlign.center,
+                  style: AppText.ui(
+                      size: 14,
+                      weight: selected ? FontWeight.w700 : FontWeight.w500,
+                      color: selected ? AppColors.ink : AppColors.muted)),
+            ),
+          ),
         );
+
+    Widget picker(String title, int value, Iterable<Surah> options, ValueChanged<int> onChanged) =>
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+          child: Row(
+            children: [
+              Expanded(
+                child: Text(title, style: AppText.ui(size: 15, weight: FontWeight.w600)),
+              ),
+              DropdownButton<int>(
+                value: value,
+                underline: const SizedBox.shrink(),
+                borderRadius: BorderRadius.circular(12),
+                menuMaxHeight: 420,
+                style: AppText.ui(size: 14),
+                items: [
+                  for (final s in options)
+                    DropdownMenuItem(value: s.number, child: Text(label(s))),
+                ],
+                onChanged: (v) {
+                  if (v != null) onChanged(v);
+                },
+              ),
+            ],
+          ),
+        );
+
+    // Pages the daily reading covers.
+    final fromPage = q.pageOf(settings.quranFromSurah, 1);
+    final last = q.surah(settings.quranToSurah);
+    final toPage = q.pageOf(last.number, last.count);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 10, 16, 6),
+          child: Container(
+            padding: const EdgeInsets.all(4),
+            decoration: BoxDecoration(
+              color: AppColors.segment,
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Row(
+              children: [
+                choice(context.tr('wird_khatma'), settings.quranKhatma,
+                    () => settings.setQuranKhatma(true)),
+                choice(context.tr('wird_range'), !settings.quranKhatma,
+                    () => settings.setQuranKhatma(false)),
+              ],
+            ),
+          ),
+        ),
+        if (!settings.quranKhatma) ...[
+          // «من سورة»: any surah but the last; «إلى سورة»: only those after it.
+          picker(context.tr('wird_from_surah'), settings.rangeFrom,
+              q.surahs.where((s) => s.number < 114),
+              (v) => settings.setQuranRange(v, v >= settings.rangeTo ? v + 1 : settings.rangeTo)),
+          picker(context.tr('wird_to_surah'), settings.rangeTo,
+              q.surahs.where((s) => s.number > settings.rangeFrom),
+              (v) => settings.setQuranRange(settings.rangeFrom, v)),
+        ],
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 4, 16, 12),
+          child: Text(
+              context.tr('wird_pages_range', {
+                'a': nn(fromPage),
+                'b': nn(toPage),
+                'n': nn(toPage - fromPage + 1),
+              }),
+              style: AppText.ui(size: 13, color: AppColors.gold, weight: FontWeight.w600)),
+        ),
+      ],
+    );
   }
 }
 
