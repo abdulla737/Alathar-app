@@ -169,6 +169,36 @@ class SettingsScreen extends StatelessWidget {
                     items: {for (final t in _translations) t: t},
                     onChanged: settings.setTranslation,
                   ),
+              ],
+            ),
+            const SizedBox(height: 18),
+
+            // Lock-screen widget (iPhone) — how to add it.
+            if (Theme.of(context).platform == TargetPlatform.iOS) ...[
+              Text(context.tr('widget_section'), style: AppText.overline()),
+              const SizedBox(height: 8),
+              _Group(
+                children: [
+                  ListTile(
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 16),
+                    leading: const Icon(Icons.lock_clock_outlined, color: AppColors.green),
+                    title: Text(context.tr('widget_title'),
+                        style: AppText.ui(size: 15, weight: FontWeight.w600)),
+                    subtitle: Text(context.tr('widget_sub'),
+                        style: AppText.ui(size: 12, color: AppColors.muted)),
+                    trailing: const Icon(Icons.chevron_right, color: AppColors.muted),
+                    onTap: () => _showWidgetHelp(context),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 18),
+            ],
+
+            // Sources & credits — last section.
+            Text(context.tr('sources_section'), style: AppText.overline()),
+            const SizedBox(height: 8),
+            _Group(
+              children: [
                 ListTile(
                   contentPadding: const EdgeInsets.symmetric(horizontal: 16),
                   title: Text(context.tr('sources'),
@@ -180,6 +210,29 @@ class SettingsScreen extends StatelessWidget {
                 ),
               ],
             ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showWidgetHelp(BuildContext context) {
+    showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: AppColors.surface,
+      showDragHandle: true,
+      isScrollControlled: true,
+      builder: (context) => Padding(
+        padding: const EdgeInsets.fromLTRB(24, 0, 24, 32),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(context.tr('widget_title'),
+                style: AppText.ui(size: 18, weight: FontWeight.w700)),
+            const SizedBox(height: 12),
+            Text(context.tr('widget_steps'),
+                style: AppText.ui(size: 14, height: 1.9, color: AppColors.body)),
           ],
         ),
       ),

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../data/quran.dart';
+import '../data/quran_search.dart';
 import '../data/tawheed_search.dart';
 import '../l10n/strings.dart';
 import '../theme/app_theme.dart';
@@ -19,6 +20,15 @@ class _QuranScreenState extends State<QuranScreen> {
   final _search = TextEditingController();
   String _query = '';
   bool _showJuz = false;
+
+  @override
+  void initState() {
+    super.initState();
+    // Verse search index, built in the background.
+    QuranSearch.ensureIndex().then((_) {
+      if (mounted && _query.trim().isNotEmpty) setState(() {});
+    });
+  }
 
   @override
   void dispose() {
@@ -50,6 +60,43 @@ class _QuranScreenState extends State<QuranScreen> {
             s.translit.toLowerCase().contains(lower) ||
             s.english.toLowerCase().contains(lower))
         .toList();
+  }
+
+  /// Surahs by name, then verses containing the typed words.
+  List<Widget> _searchResults(BuildContext context, List<Surah> surahs) {
+    final verses = QuranSearch.search(_query);
+    Widget heading(String t) => Padding(
+          padding: const EdgeInsets.only(top: 4, bottom: 8),
+          child: Text(t,
+              style: AppText.ui(size: 13, weight: FontWeight.w700, color: AppColors.muted)),
+        );
+    return [
+      if (surahs.isNotEmpty) ...[
+        heading(context.tr('quran_surahs')),
+        for (final s in surahs.take(6)) _SurahRow(surah: s, onTap: () => _open(s.number)),
+        const SizedBox(height: 6),
+      ],
+      if (!QuranSearch.ready)
+        const Padding(
+          padding: EdgeInsets.all(16),
+          child: Center(child: CircularProgressIndicator(color: AppColors.green)),
+        )
+      else if (verses.total > 0) ...[
+        heading(context.tr('quran_verse_results', {'n': localNum(verses.total)})),
+        for (final h in verses.hits)
+          _VerseHit(hit: h, onTap: () => _open(h.surah, h.ayah)),
+        if (verses.total > verses.hits.length)
+          Text(context.tr('quran_more_results'),
+              textAlign: TextAlign.center,
+              style: AppText.ui(size: 12, color: AppColors.muted)),
+      ] else if (surahs.isEmpty)
+        Padding(
+          padding: const EdgeInsets.symmetric(vertical: 24),
+          child: Text(context.tr('quran_no_results'),
+              textAlign: TextAlign.center,
+              style: AppText.ui(size: 14, color: AppColors.muted)),
+        ),
+    ];
   }
 
   void _showBookmarks() => showQuranBookmarks(context, onOpen: _open);
@@ -164,13 +211,8 @@ class _QuranScreenState extends State<QuranScreen> {
         if (!searching && _showJuz)
           for (var j = 0; j < q.juzStarts.length; j++)
             _JuzRow(juz: j + 1, onOpen: _open)
-        else if (surahs.isEmpty)
-          Padding(
-            padding: const EdgeInsets.symmetric(vertical: 24),
-            child: Text(context.tr('quran_no_results'),
-                textAlign: TextAlign.center,
-                style: AppText.ui(size: 14, color: AppColors.muted)),
-          )
+        else if (searching)
+          ..._searchResults(context, surahs)
         else
           for (final s in surahs) _SurahRow(surah: s, onTap: () => _open(s.number)),
         const SizedBox(height: 8),
@@ -268,6 +310,40 @@ class _Segment extends StatelessWidget {
         borderRadius: BorderRadius.circular(16),
       ),
       child: Row(children: [part(left, !rightSelected, false), part(right, rightSelected, true)]),
+    );
+  }
+}
+
+/// A verse found by the search: surah · verse number, then the text.
+class _VerseHit extends StatelessWidget {
+  final QuranHit hit;
+  final VoidCallback onTap;
+  const _VerseHit({required this.hit, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    final surah = QuranData.instance.surah(hit.surah);
+    final name = S.isArabic ? 'سورة ${surah.name}' : surah.translit;
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: AppCard(
+        radius: 16,
+        padding: const EdgeInsets.fromLTRB(14, 10, 14, 12),
+        onTap: onTap,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text('$name · ${context.tr('quran_ayah', {'n': localNum(hit.ayah)})}',
+                style: AppText.ui(size: 12, weight: FontWeight.w700, color: AppColors.green)),
+            const SizedBox(height: 4),
+            Text(hit.text,
+                textDirection: TextDirection.rtl,
+                maxLines: 4,
+                overflow: TextOverflow.ellipsis,
+                style: quranStyle(19, height: 1.9)),
+          ],
+        ),
+      ),
     );
   }
 }

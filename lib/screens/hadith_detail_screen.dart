@@ -100,18 +100,8 @@ class HadithDetailScreen extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 16),
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Expanded(
-                    child: _MetaTile(
-                        label: context.tr('narrator'), value: h.narrator.v)),
-                const SizedBox(width: 10),
-                Expanded(
-                    child: _MetaTile(
-                        label: context.tr('source'), value: h.fullReference.v)),
-              ],
-            ),
+            if (h.narrator.v.isNotEmpty)
+              _MetaTile(label: context.tr('narrator'), value: h.narrator.v),
             // Explanation and "Act on it" show only when the content has them.
             if (h.explanation.v.isNotEmpty) ...[
               const SizedBox(height: 16),

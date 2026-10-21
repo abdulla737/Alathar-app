@@ -11,6 +11,7 @@ import 'data/prayer_store.dart';
 import 'data/quran.dart';
 import 'data/reminders.dart';
 import 'data/weather.dart';
+import 'data/widget_sync.dart';
 import 'data/user_store.dart';
 import 'l10n/strings.dart';
 import 'screens/home_shell.dart';
@@ -42,6 +43,12 @@ Future<void> main() async {
   // Connect to Supabase, then check for new content in the background.
   unawaited(_step('supabase', ContentSync.init, seconds: 10)
       .then((_) => ContentSync.run()));
+  // iPhone Lock Screen / Home Screen widgets.
+  try {
+    WidgetSync.instance.start();
+  } catch (e) {
+    debugPrint('Widget sync failed: $e');
+  }
   // Phone notifications for the Settings reminders (work with the app closed).
   unawaited(_step('reminders', Reminders.init, seconds: 20));
 }

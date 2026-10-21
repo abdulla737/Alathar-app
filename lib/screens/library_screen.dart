@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 
 import '../data/content_store.dart';
-import '../data/tawheed_search.dart';
 import '../data/sample_data.dart';
+import '../data/tawheed_search.dart';
 import '../l10n/strings.dart';
 import '../theme/app_theme.dart';
 import '../widgets/common.dart';
@@ -17,7 +17,6 @@ class LibraryScreen extends StatefulWidget {
 }
 
 class _LibraryScreenState extends State<LibraryScreen> {
-  bool _showTopics = false;
   final _search = TextEditingController();
   String _query = '';
 
@@ -47,13 +46,6 @@ class _LibraryScreenState extends State<LibraryScreen> {
     FocusScope.of(context).unfocus();
     Navigator.of(context).push(MaterialPageRoute(
       builder: (_) => HadithDetailScreen(hadith: h),
-    ));
-  }
-
-  void _openHadith() {
-    // TODO: open the selected collection/topic list instead.
-    Navigator.of(context).push(MaterialPageRoute(
-      builder: (_) => HadithDetailScreen(hadith: ContentStore.instance.hadithOfToday()),
     ));
   }
 
@@ -103,59 +95,10 @@ class _LibraryScreenState extends State<LibraryScreen> {
           if (_query.trim().length >= 2)
             ..._results(context)
           else ...[
-          _Segmented(
-            first: context.tr('collections'),
-            second: context.tr('topics'),
-            secondSelected: _showTopics,
-            onChanged: (v) => setState(() => _showTopics = v),
-          ),
-          const SizedBox(height: 16),
-          if (!_showTopics)
-            ...[
-              for (final c in ContentStore.instance.collections) ...[
-                _CollectionTile(collection: c, onTap: () => _openCollection(c)),
-                const SizedBox(height: 10),
-              ],
-            ]
-          else
-            GridView.count(
-              crossAxisCount: 2,
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              mainAxisSpacing: 10,
-              crossAxisSpacing: 10,
-              childAspectRatio: 2.0,
-              children: [
-                for (final t in SampleData.topics)
-                  AppCard(
-                    radius: 18,
-                    padding: const EdgeInsets.all(14),
-                    onTap: _openHadith,
-                    child: S.isArabic
-                        // Arabic: one large title is enough.
-                        ? Align(
-                            alignment: AlignmentDirectional.centerStart,
-                            child: Text(t.name.v,
-                                style: AppText.arabic(
-                                    size: 22,
-                                    weight: FontWeight.w700,
-                                    color: AppColors.green,
-                                    height: 1.3)),
-                          )
-                        : Column(
-                            crossAxisAlignment: CrossAxisAlignment.stretch,
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              ArabicText(t.arabic,
-                                  style: AppText.arabic(
-                                      size: 18, color: AppColors.gold, height: 1.2)),
-                              Text(t.name.v,
-                                  style: AppText.ui(size: 15, weight: FontWeight.w600)),
-                            ],
-                          ),
-                  ),
-              ],
-            ),
+          for (final c in ContentStore.instance.collections) ...[
+            _CollectionTile(collection: c, onTap: () => _openCollection(c)),
+            const SizedBox(height: 10),
+          ],
           ],
         ],
       ),
@@ -274,69 +217,6 @@ class _CollectionTile extends StatelessWidget {
             ),
           ),
           const Icon(Icons.chevron_right, color: AppColors.muted),
-        ],
-      ),
-    );
-  }
-}
-
-class _Segmented extends StatelessWidget {
-  final String first;
-  final String second;
-  final bool secondSelected;
-  final ValueChanged<bool> onChanged;
-
-  const _Segmented({
-    required this.first,
-    required this.second,
-    required this.secondSelected,
-    required this.onChanged,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    Widget seg(String label, bool selected, VoidCallback onTap) {
-      return Expanded(
-        child: Semantics(
-          selected: selected,
-          button: true,
-          child: GestureDetector(
-            onTap: onTap,
-            child: AnimatedContainer(
-              duration: const Duration(milliseconds: 180),
-              height: 40,
-              alignment: Alignment.center,
-              decoration: BoxDecoration(
-                color: selected ? AppColors.surface : Colors.transparent,
-                borderRadius: BorderRadius.circular(9),
-                boxShadow: selected
-                    ? const [
-                        BoxShadow(
-                            color: Color(0x1417201C), blurRadius: 2, offset: Offset(0, 1))
-                      ]
-                    : null,
-              ),
-              child: Text(label,
-                  style: AppText.ui(
-                      size: 14,
-                      weight: selected ? FontWeight.w600 : FontWeight.w500,
-                      color: selected ? AppColors.ink : AppColors.muted)),
-            ),
-          ),
-        ),
-      );
-    }
-
-    return Container(
-      padding: const EdgeInsets.all(4),
-      decoration: BoxDecoration(
-        color: AppColors.segment,
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Row(
-        children: [
-          seg(first, !secondSelected, () => onChanged(false)),
-          seg(second, secondSelected, () => onChanged(true)),
         ],
       ),
     );

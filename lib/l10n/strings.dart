@@ -37,7 +37,9 @@ class S {
       'tab_quran': 'القرآن',
       'quran_title': 'القرآن الكريم',
       'quran_subtitle': 'برواية حفص عن عاصم',
-      'quran_search': 'ابحث باسم السورة أو رقمها',
+      'quran_search': 'ابحث عن سورة أو أي كلمة أو آية',
+      'quran_verse_results': 'الآيات ({n})',
+      'quran_more_results': 'تظهر أول ٦٠ آية — أضف كلمة لتضييق البحث',
       'quran_surahs': 'السور',
       'quran_juz_tab': 'الأجزاء',
       'quran_juz': 'الجزء {n}',
@@ -61,7 +63,7 @@ class S {
       'quran_marked': 'سنكمل من هنا في المرة القادمة',
       'quran_next': 'السورة التالية',
       'quran_prev': 'السورة السابقة',
-      'quran_no_results': 'لا توجد سورة بهذا الاسم',
+      'quran_no_results': 'لا توجد نتائج',
       'quran_progress': '{p}٪ من القرآن',
       'quran_sajda': 'سجدة',
       'tajweed_title': 'التجويد',
@@ -260,7 +262,25 @@ class S {
       'credits_body':
           '• نصوص الأحاديث وشروحها وترجماتها: موسوعة الأحاديث النبوية المترجمة HadeethEnc.com\n'
               '• ترقيم الكتب: وفق ترقيم Sunnah.com\n'
-              '• الأذكار: حصن المسلم للشيخ سعيد بن وهف القحطاني',
+              '• الأذكار: حصن المسلم للشيخ سعيد بن وهف القحطاني\n'
+              '• نص المصحف: المصحف العثماني برواية حفص عن عاصم من Tanzil.net دون تعديل\n'
+              '• ألوان التجويد: quran-tajweed (CC BY 4.0)\n'
+              '• الخط القرآني: Amiri Quran',
+      'sources_section': 'المصادر',
+      'widget_open_app': 'افتح الأثر لتحديث المواقيت',
+      'widget_wird': 'ورد اليوم',
+      'widget_quran': 'التلاوة',
+      'widget_hadith': 'الحديث',
+      'widget_pages': 'صفحات',
+      'widget_section': 'شاشة القفل',
+      'widget_title': 'ويدجت الأثر على شاشة القفل',
+      'widget_sub': 'الصلاة القادمة وورد اليوم دون فتح التطبيق',
+      'widget_steps':
+          '١. اضغط مطولًا على شاشة القفل ثم اختر «تخصيص».\n'
+              '٢. اختر شاشة القفل، ثم اضغط على مكان الأدوات تحت الساعة.\n'
+              '٣. ابحث عن «الأثر» واختر «الصلاة القادمة» أو «ورد اليوم».\n'
+              '٤. اضغط «تم». تتحدث الأداة تلقائيًا عند فتح التطبيق وعند كل صلاة.\n\n'
+              'يمكن إضافتها أيضًا إلى الشاشة الرئيسية بالضغط المطوّل ثم زر «+».',
       'rem_hadith': 'ورد الحديث اليومي',
       'rem_hadith_sub': 'إشعار بعد الفجر بربع ساعة',
       'rem_quran': 'ورد التلاوة اليومية',
@@ -351,7 +371,9 @@ class S {
       'tab_quran': 'Qur\'an',
       'quran_title': 'The Holy Qur\'an',
       'quran_subtitle': 'Hafs ʿan ʿAsim',
-      'quran_search': 'Search by surah name or number',
+      'quran_search': 'Search a surah, any word or verse',
+      'quran_verse_results': 'Verses ({n})',
+      'quran_more_results': 'Showing the first 60 verses — add a word to narrow it',
       'quran_surahs': 'Surahs',
       'quran_juz_tab': 'Juz',
       'quran_juz': 'Juz {n}',
@@ -375,7 +397,7 @@ class S {
       'quran_marked': 'You\'ll continue from here next time',
       'quran_next': 'Next surah',
       'quran_prev': 'Previous surah',
-      'quran_no_results': 'No surah found',
+      'quran_no_results': 'No results',
       'quran_progress': '{p}% of the Qur\'an',
       'quran_sajda': 'Sajda',
       'tajweed_title': 'Tajweed',
@@ -574,7 +596,25 @@ class S {
       'credits_body':
           '• Hadith text, translations and explanations: HadeethEnc.com\n'
               '• Collection references: Sunnah.com numbering\n'
-              '• Athkar: Hisn al-Muslim by Sa\'id al-Qahtani',
+              '• Athkar: Hisn al-Muslim by Sa\'id al-Qahtani\n'
+              '• Qur\'an text: Uthmani mushaf (Hafs ʿan ʿAsim) from Tanzil.net, unchanged\n'
+              '• Tajweed colours: quran-tajweed (CC BY 4.0)\n'
+              '• Qur\'an font: Amiri Quran',
+      'sources_section': 'Sources',
+      'widget_open_app': 'Open Alathar to update times',
+      'widget_wird': 'Today\'s wird',
+      'widget_quran': 'Qur\'an',
+      'widget_hadith': 'Hadith',
+      'widget_pages': 'pages',
+      'widget_section': 'Lock Screen',
+      'widget_title': 'Alathar on the Lock Screen',
+      'widget_sub': 'Next prayer and today\'s wird without opening the app',
+      'widget_steps':
+          '1. Touch and hold the Lock Screen, then tap Customise.\n'
+              '2. Choose Lock Screen, then tap the widget area below the clock.\n'
+              '3. Find Alathar and pick «Next prayer» or «Today\'s wird».\n'
+              '4. Tap Done. It refreshes when you open the app and at each prayer.\n\n'
+              'You can also add it to the Home Screen: touch and hold, then tap +.',
       'rem_hadith': 'Daily hadith reading',
       'rem_hadith_sub': '15 min after Fajr',
       'rem_quran': 'Daily Qur\'an recitation',
@@ -665,7 +705,9 @@ class S {
       'tab_quran': 'قرآن',
       'quran_title': 'قرآن کریم',
       'quran_subtitle': 'روایت حفص عن عاصم',
-      'quran_search': 'سورت کا نام یا نمبر تلاش کریں',
+      'quran_search': 'سورت، کوئی لفظ یا آیت تلاش کریں',
+      'quran_verse_results': 'آیات ({n})',
+      'quran_more_results': 'پہلی 60 آیات دکھائی گئی ہیں — تلاش محدود کرنے کے لیے لفظ شامل کریں',
       'quran_surahs': 'سورتیں',
       'quran_juz_tab': 'پارے',
       'quran_juz': 'پارہ {n}',
@@ -689,7 +731,7 @@ class S {
       'quran_marked': 'اگلی بار یہیں سے جاری رہے گا',
       'quran_next': 'اگلی سورت',
       'quran_prev': 'پچھلی سورت',
-      'quran_no_results': 'کوئی سورت نہیں ملی',
+      'quran_no_results': 'کوئی نتیجہ نہیں ملا',
       'quran_progress': 'قرآن کا {p}٪',
       'quran_sajda': 'سجدہ',
       'tajweed_title': 'تجوید',
@@ -888,7 +930,25 @@ class S {
       'credits_body':
           '• احادیث کا متن، ترجمہ اور تشریح: HadeethEnc.com\n'
               '• کتب کے حوالے: Sunnah.com کی ترقیم\n'
-              '• اذکار: حصن المسلم از سعید بن وہف القحطانی',
+              '• اذکار: حصن المسلم از سعید بن وہف القحطانی\n'
+              '• قرآن کا متن: مصحف عثمانی (روایت حفص عن عاصم) Tanzil.net سے، بغیر تبدیلی کے\n'
+              '• تجوید کے رنگ: quran-tajweed (CC BY 4.0)\n'
+              '• قرآنی فونٹ: Amiri Quran',
+      'sources_section': 'ماخذ',
+      'widget_open_app': 'اوقات کے لیے الأثر کھولیں',
+      'widget_wird': 'آج کا ورد',
+      'widget_quran': 'تلاوت',
+      'widget_hadith': 'حدیث',
+      'widget_pages': 'صفحات',
+      'widget_section': 'لاک اسکرین',
+      'widget_title': 'لاک اسکرین پر الأثر',
+      'widget_sub': 'اگلی نماز اور آج کا ورد، ایپ کھولے بغیر',
+      'widget_steps':
+          '1. لاک اسکرین کو دبا کر رکھیں، پھر «Customise» دبائیں۔\n'
+              '2. لاک اسکرین منتخب کریں، پھر گھڑی کے نیچے ویجیٹ کی جگہ دبائیں۔\n'
+              '3. «الأثر» تلاش کریں اور «اگلی نماز» یا «آج کا ورد» منتخب کریں۔\n'
+              '4. «Done» دبائیں۔ ایپ کھولنے پر اور ہر نماز پر یہ خود اپ ڈیٹ ہوتا ہے۔\n\n'
+              'ہوم اسکرین پر بھی شامل کر سکتے ہیں: دبا کر رکھیں، پھر + دبائیں۔',
       'rem_hadith': 'روزانہ حدیث کا ورد',
       'rem_hadith_sub': 'فجر کے 15 منٹ بعد',
       'rem_quran': 'روزانہ تلاوت کا ورد',
