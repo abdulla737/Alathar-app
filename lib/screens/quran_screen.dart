@@ -36,10 +36,10 @@ class _QuranScreenState extends State<QuranScreen> {
     super.dispose();
   }
 
-  void _open(int surah, [int ayah = 1]) {
+  void _open(int surah, [int ayah = 1, bool focus = false]) {
     FocusScope.of(context).unfocus();
     Navigator.of(context).push(MaterialPageRoute(
-      builder: (_) => QuranReaderScreen(surah: surah, ayah: ayah),
+      builder: (_) => QuranReaderScreen(surah: surah, ayah: ayah, focus: focus),
     ));
   }
 
@@ -84,7 +84,7 @@ class _QuranScreenState extends State<QuranScreen> {
       else if (verses.total > 0) ...[
         heading(context.tr('quran_verse_results', {'n': localNum(verses.total)})),
         for (final h in verses.hits)
-          _VerseHit(hit: h, onTap: () => _open(h.surah, h.ayah)),
+          _VerseHit(hit: h, onTap: () => _open(h.surah, h.ayah, true)),
         if (verses.total > verses.hits.length)
           Text(context.tr('quran_more_results'),
               textAlign: TextAlign.center,

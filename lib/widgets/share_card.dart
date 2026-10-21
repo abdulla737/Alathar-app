@@ -20,19 +20,27 @@ Future<void> showHadithShare(BuildContext context, Hadith h) {
     backgroundColor: AppColors.ground,
     shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
-    builder: (_) => _SharePreview(hadith: h),
+    builder: (sheet) => SharePreview(
+      card: HadithShareCard(hadith: h),
+      fileName: 'alathar-hadith-${h.id}.png',
+      text: shareMessage(context, h),
+    ),
   );
 }
 
-class _SharePreview extends StatefulWidget {
-  final Hadith hadith;
-  const _SharePreview({required this.hadith});
+/// Preview of a designed card with a "Share" button that sends it as an
+/// image. [text] goes with the image (null = the image only).
+class SharePreview extends StatefulWidget {
+  final Widget card;
+  final String fileName;
+  final String? text;
+  const SharePreview({super.key, required this.card, required this.fileName, this.text});
 
   @override
-  State<_SharePreview> createState() => _SharePreviewState();
+  State<SharePreview> createState() => _SharePreviewState();
 }
 
-class _SharePreviewState extends State<_SharePreview> {
+class _SharePreviewState extends State<SharePreview> {
   final _cardKey = GlobalKey();
   final _buttonKey = GlobalKey();
   bool _busy = false;
@@ -56,10 +64,9 @@ class _SharePreviewState extends State<_SharePreview> {
       // 3. Share image + message. Pick WhatsApp in the share sheet.
       await Share.shareXFiles(
         [
-          XFile.fromData(bytes,
-              mimeType: 'image/png', name: 'alathar-hadith-${widget.hadith.id}.png'),
+          XFile.fromData(bytes, mimeType: 'image/png', name: widget.fileName),
         ],
-        text: shareMessage(context, widget.hadith),
+        text: widget.text,
         sharePositionOrigin: origin,
       );
       if (mounted) Navigator.of(context).maybePop();
@@ -96,7 +103,7 @@ class _SharePreviewState extends State<_SharePreview> {
               child: FittedBox(
                 child: RepaintBoundary(
                   key: _cardKey,
-                  child: HadithShareCard(hadith: widget.hadith),
+                  child: widget.card,
                 ),
               ),
             ),

@@ -1,12 +1,12 @@
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:share_plus/share_plus.dart';
 
 import '../data/app_settings.dart';
 import '../data/quran.dart';
 import '../l10n/strings.dart';
 import '../theme/app_theme.dart';
+import '../widgets/quran_share_card.dart';
 import '../widgets/quran_ornaments.dart';
 import '../widgets/text_size_buttons.dart';
 
@@ -107,8 +107,16 @@ class QuranReaderScreen extends StatefulWidget {
   /// Daily reading («ورد التلاوة اليومية»): only today's pages, starting at
   /// this page (count from Settings), then a "done" page. Null = whole mushaf.
   final int? wirdStartPage;
+
+  /// Opened from a search result: the verse stays highlighted (until you
+  /// tap or turn the page) and the page scrolls to it.
+  final bool focus;
   const QuranReaderScreen(
-      {super.key, required this.surah, this.ayah = 1, this.wirdStartPage});
+      {super.key,
+      required this.surah,
+      this.ayah = 1,
+      this.wirdStartPage,
+      this.focus = false});
 
   @override
   State<QuranReaderScreen> createState() => _QuranReaderScreenState();
@@ -161,6 +169,26 @@ class _QuranReaderScreenState extends State<QuranReaderScreen> {
   final Map<int, TapGestureRecognizer> _taps = {};
   int? _selected; // overall index of the tapped verse
 
+  /// Marks the start of the verse to bring into view (opened / jumped to).
+  final _focusKey = GlobalKey();
+  int? _focusIndex;
+
+  /// Scrolls the page so the focused verse shows near the top.
+  void _scrollToFocus() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final ctx = _focusKey.currentContext;
+      if (!mounted || ctx == null) return;
+      final target = ctx.findRenderObject();
+      final scrollable = Scrollable.maybeOf(ctx);
+      if (target == null || scrollable == null) return;
+      // Only the page's own vertical scroll (not the page turning).
+      scrollable.position.ensureVisible(target,
+          alignment: 0.15,
+          duration: const Duration(milliseconds: 350),
+          curve: Curves.easeOutCubic);
+    });
+  }
+
   @override
   void initState() {
     super.initState();
@@ -173,14 +201,18 @@ class _QuranReaderScreenState extends State<QuranReaderScreen> {
       _checkWirdEnd(_page);
     });
     _loadTajweed();
-    // Briefly highlight the verse that was opened (juz / bookmark / search).
-    if (_openAyah > 1) {
-      _selected = _q.indexOf(widget.surah, _openAyah);
-      Future.delayed(const Duration(seconds: 2), () {
-        if (mounted && _selected == _q.indexOf(widget.surah, _openAyah)) {
-          setState(() => _selected = null);
-        }
-      });
+    // Highlight the verse that was opened (juz / bookmark / search) and
+    // bring it into view. From a search it stays highlighted.
+    if (_openAyah > 1 || widget.focus) {
+      final index = _q.indexOf(widget.surah, _openAyah);
+      _selected = index;
+      _focusIndex = index;
+      _scrollToFocus();
+      if (!widget.focus) {
+        Future.delayed(const Duration(seconds: 2), () {
+          if (mounted && _selected == index) setState(() => _selected = null);
+        });
+      }
     }
   }
 
@@ -239,13 +271,24 @@ class _QuranReaderScreenState extends State<QuranReaderScreen> {
       return;
     }
     _pages.jumpToPage(page - _firstPage);
+    setState(() {
+      _selected = _q.indexOf(s, a);
+      _focusIndex = _selected;
+    });
+    _scrollToFocus();
   }
 
   void _onPageChanged(int index) {
     if (index >= _windowPages) return; // the "done" page after today's reading
     setState(() {
       _page = _firstPage + index;
-      _selected = null;
+      // Keep the focused verse only while its page is showing.
+      final keep = _focusIndex != null &&
+          _q.ayatOnPage(_page).any((v) => _q.indexOf(v.$1, v.$2) == _focusIndex);
+      if (!keep) {
+        _selected = null;
+        _focusIndex = null;
+      }
     });
     final (s, a) = _q.ayatOnPage(_page).first;
     QuranStore.instance.setPosition(s, a);
@@ -374,6 +417,10 @@ class _QuranReaderScreenState extends State<QuranReaderScreen> {
       }
       final index = _q.indexOf(s, a);
       final highlight = _selected == index ? AppColors.greenSoft : null;
+      if (index == _focusIndex) {
+        // Invisible marker where the verse starts (for scrolling to it).
+        spans.add(WidgetSpan(child: SizedBox(key: _focusKey, width: 0, height: 0)));
+      }
       spans.addAll(tajweedSpans(
         surah.ayat[a - 1],
         store.tajweed ? _q.tajweedOf(s, a) : const [],
@@ -673,11 +720,11 @@ class _AyahSheet extends StatelessWidget {
                       messenger.showSnackBar(SnackBar(content: Text(done)));
                     }),
                     action(Icons.ios_share, context.tr('quran_share'), () {
-                      final box = context.findRenderObject() as RenderBox?;
-                      Share.share(_shareText,
-                          sharePositionOrigin: box == null
-                              ? null
-                              : box.localToGlobal(Offset.zero) & box.size);
+                      // Shared as a mushaf-style image (no text).
+                      final nav = Navigator.of(context);
+                      final root = nav.context;
+                      nav.pop();
+                      showQuranShare(root, surah.number, ayah);
                     }),
                     if (onBookmarks != null)
                       action(Icons.collections_bookmark_outlined,
