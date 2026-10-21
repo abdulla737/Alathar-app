@@ -214,16 +214,12 @@ class _HadithOfTheDayCard extends StatelessWidget {
       listenable: Listenable.merge([AppSettings.instance, UserStore.instance]),
       builder: (context, _) {
         final user = UserStore.instance;
-        // Today's set (Settings → «الورد اليومي»: hadith per day). The card
-        // shows the first one not read yet.
-        final goal = AppSettings.instance.hadithPerDay;
-        final today = ContentStore.instance.hadithsOfToday(goal);
-        final ids = [for (final h in today) h.id];
-        final read = user.readTodayAmong(ids);
-        final total = today.length;
-        final doneToday = read >= total;
-        final hadith = today.firstWhere((h) => !user.readToday(h.id), orElse: () => today.first);
-        final onTap = () => onOpen(hadith);
+        // One hadith a day; done when the user slides to confirm on its page.
+        final hadith = ContentStore.instance.hadithOfToday();
+        final doneToday = user.readToday(hadith.id);
+        final read = doneToday ? 1 : 0;
+        const total = 1;
+        void onTap() => onOpen(hadith);
         String n(int v) => S.isArabic ? _arabicDigits(v) : '$v';
         return AppCard(
           color: AppColors.green,
@@ -293,7 +289,9 @@ class _HadithOfTheDayCard extends StatelessWidget {
                       children: [
                         Expanded(
                           child: Text(
-                              context.tr('hadith_today_progress', {'n': n(read), 't': n(total)}),
+                              doneToday
+                                  ? context.tr('hadith_confirmed')
+                                  : context.tr('hadith_confirm_hint'),
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                               style: AppText.ui(size: 12, color: AppColors.onGreenMuted)),

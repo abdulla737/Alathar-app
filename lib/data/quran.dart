@@ -173,6 +173,12 @@ class QuranStore extends ChangeNotifier {
   /// Colour of the surah banners and verse medallions (0 = green).
   int ornament = 0;
 
+  /// Daily reading window: today's first page, and where tomorrow starts
+  /// once today's pages are finished.
+  String _wirdDay = '';
+  int? _wirdStart;
+  int? _wirdNext;
+
   /// Mushaf pages read today (daily-goal progress); reset at midnight.
   final Set<int> _pagesToday = {};
   String _pagesDay = '';
@@ -189,6 +195,7 @@ class QuranStore extends ChangeNotifier {
   static const _kTajweed = 'quran_tajweed';
   static const _kOrnament = 'quran_ornament';
   static const _kPagesToday = 'quran_pages_today'; // "YYYY-MM-DD:1,2"
+  static const _kWird = 'quran_wird'; // "YYYY-MM-DD|start|next"
 
   Future<void> load() async {
     final p = _prefs = await SharedPreferences.getInstance();
@@ -200,6 +207,12 @@ class QuranStore extends ChangeNotifier {
     size = (p.getDouble(_kSize) ?? 24).clamp(minSize, maxSize);
     tajweed = p.getBool(_kTajweed) ?? true;
     ornament = p.getInt(_kOrnament) ?? 0;
+    final w = (p.getString(_kWird) ?? '').split('|');
+    if (w.length == 3) {
+      _wirdDay = w[0];
+      _wirdStart = int.tryParse(w[1]);
+      _wirdNext = int.tryParse(w[2]);
+    }
     final pt = p.getString(_kPagesToday) ?? '';
     final colon = pt.indexOf(':');
     if (colon > 0) {
@@ -262,6 +275,38 @@ class QuranStore extends ChangeNotifier {
     _rollPagesDay();
     if (!_pagesToday.add(page)) return;
     _prefs?.setString(_kPagesToday, '$_pagesDay:${_pagesToday.join(',')}');
+    notifyListeners();
+  }
+
+  void _saveWird() =>
+      _prefs?.setString(_kWird, '$_wirdDay|${_wirdStart ?? ''}|${_wirdNext ?? ''}');
+
+  /// Today's first page of the daily reading (without changing anything):
+  /// today's start if already begun, else where yesterday's reading ended,
+  /// else [fallback]. Must lie in [from]..[to] (the chosen surahs).
+  int wirdStartPage(int fallback, int from, int to) {
+    int? inRange(int? p) => p != null && p >= from && p <= to ? p : null;
+    if (_wirdDay == _day(DateTime.now())) {
+      final start = inRange(_wirdStart);
+      if (start != null) return start;
+    }
+    return inRange(_wirdNext) ?? fallback.clamp(from, to);
+  }
+
+  /// Fixes today's first page when today's reading is opened.
+  void beginWird(int page) {
+    final today = _day(DateTime.now());
+    if (_wirdDay == today && _wirdStart == page) return;
+    _wirdDay = today;
+    _wirdStart = page;
+    _saveWird();
+  }
+
+  /// Today's last page was reached: tomorrow continues from [nextPage].
+  void finishWird(int nextPage) {
+    if (_wirdNext == nextPage) return;
+    _wirdNext = nextPage;
+    _saveWird();
     notifyListeners();
   }
 

@@ -38,13 +38,26 @@ class QuranWirdCard extends StatelessWidget {
     final startIndex = q.indexOf(fromSurah, 1);
     final endIndex = q.indexOf(toSurah, lastOfRange.count);
 
-    // Continue where you stopped, if that is inside the range.
-    var s = fromSurah, ayah = 1;
+    // Today's pages: from today's first page (or where yesterday's reading
+    // ended) for the daily number of pages, inside the chosen surahs.
+    final fromPage = q.pageOf(fromSurah, 1);
+    final toPage = q.pageOf(toSurah, lastOfRange.count);
     final last = store.lastSurah;
+    var fallback = fromPage;
     if (last != null) {
       final la = store.lastAyah.clamp(1, q.surah(last).count);
-      final i = q.indexOf(last, la);
-      if (i >= startIndex && i <= endIndex) {
+      fallback = q.pageOf(last, la);
+    }
+    final startPage = store.wirdStartPage(fallback, fromPage, toPage);
+    final endPage = (startPage + settings.quranPagesPerDay - 1).clamp(startPage, toPage);
+
+    // The verse to show: where you stopped if it is within today's pages,
+    // else the first verse of today's first page.
+    var (s, ayah) = q.ayatOnPage(startPage).first;
+    if (last != null) {
+      final la = store.lastAyah.clamp(1, q.surah(last).count);
+      final p = q.pageOf(last, la);
+      if (p >= startPage && p <= endPage) {
         s = last;
         ayah = la;
       }
@@ -61,9 +74,12 @@ class QuranWirdCard extends StatelessWidget {
         started ? ((q.indexOf(s, ayah) - startIndex + 1) * 100 / rangeTotal).round() : 0;
     final done = readToday >= goal;
 
-    void open() => Navigator.of(context).push(MaterialPageRoute(
-          builder: (_) => QuranReaderScreen(surah: s, ayah: ayah),
-        ));
+    void open() {
+      store.beginWird(startPage);
+      Navigator.of(context).push(MaterialPageRoute(
+        builder: (_) => QuranReaderScreen(surah: s, ayah: ayah, wirdStartPage: startPage),
+      ));
+    }
 
     final fullQuran = fromSurah == 1 && toSurah == 114;
     final rangeLabel = fullQuran

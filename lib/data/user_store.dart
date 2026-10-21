@@ -152,7 +152,15 @@ class UserStore extends ChangeNotifier {
     _readToday.clear();
   }
 
-  /// Called when a hadith is opened in full.
+  /// Undo "read and applied today" for a hadith.
+  void unmarkReadToday(int hadithId) {
+    _rollReadDay();
+    if (!_readToday.remove(hadithId)) return;
+    _prefs?.setString(_kReadToday, '$_readDay:${_readToday.join(',')}');
+    notifyListeners();
+  }
+
+  /// Called when the user confirms reading a hadith (slide bar).
   void markRead(int hadithId) {
     _rollReadDay();
     final newEver = _read.add(hadithId);

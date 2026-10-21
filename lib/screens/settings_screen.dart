@@ -102,13 +102,6 @@ class SettingsScreen extends StatelessWidget {
             _Group(
               children: [
                 _StepperRow(
-                  label: context.tr('wird_hadith_per_day'),
-                  value: settings.hadithPerDay,
-                  min: 1,
-                  max: AppSettings.maxHadithPerDay,
-                  onChanged: settings.setHadithPerDay,
-                ),
-                _StepperRow(
                   label: context.tr('wird_quran_pages'),
                   value: settings.quranPagesPerDay,
                   min: 1,

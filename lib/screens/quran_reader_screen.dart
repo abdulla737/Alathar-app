@@ -103,7 +103,12 @@ String ayahMarker(int ayah) => '﴿${arabicDigits(ayah)}﴾';
 class QuranReaderScreen extends StatefulWidget {
   final int surah;
   final int ayah; // verse to open at (its page)
-  const QuranReaderScreen({super.key, required this.surah, this.ayah = 1});
+
+  /// Daily reading («ورد التلاوة اليومية»): only today's pages, starting at
+  /// this page (count from Settings), then a "done" page. Null = whole mushaf.
+  final int? wirdStartPage;
+  const QuranReaderScreen(
+      {super.key, required this.surah, this.ayah = 1, this.wirdStartPage});
 
   @override
   State<QuranReaderScreen> createState() => _QuranReaderScreenState();
@@ -112,8 +117,37 @@ class QuranReaderScreen extends StatefulWidget {
 class _QuranReaderScreenState extends State<QuranReaderScreen> {
   final _q = QuranData.instance;
   late final int _openAyah = widget.ayah.clamp(1, _q.surah(widget.surah).count);
-  late int _page = _q.pageOf(widget.surah, _openAyah);
-  late final PageController _pages = PageController(initialPage: _page - 1);
+  late int _page = _q.pageOf(widget.surah, _openAyah).clamp(_firstPage, _lastPage);
+  late final PageController _pages = PageController(initialPage: _page - _firstPage);
+
+  bool get _wird => widget.wirdStartPage != null;
+
+  /// First and last page this reader shows (the whole mushaf, or today's
+  /// pages in daily-reading mode).
+  int get _firstPage => widget.wirdStartPage ?? 1;
+  int get _lastPage {
+    if (!_wird) return _q.pageCount;
+    final end = _firstPage + AppSettings.instance.quranPagesPerDay - 1;
+    return end.clamp(_firstPage, _rangeLastPage());
+  }
+
+  /// Last page of the chosen surahs (Settings → «الورد اليومي»).
+  int _rangeLastPage() {
+    final last = _q.surah(AppSettings.instance.quranToSurah);
+    return _q.pageOf(last.number, last.count);
+  }
+
+  int get _windowPages => _lastPage - _firstPage + 1;
+
+  /// Reached the last page of today's reading: tomorrow starts after it
+  /// (back to the first chosen surah after the last one).
+  void _checkWirdEnd(int page) {
+    if (!_wird || page != _lastPage) return;
+    final next = page + 1 > _rangeLastPage()
+        ? _q.pageOf(AppSettings.instance.quranFromSurah, 1)
+        : page + 1;
+    QuranStore.instance.finishWird(next);
+  }
   final Map<int, TapGestureRecognizer> _taps = {};
   int? _selected; // overall index of the tapped verse
 
@@ -122,6 +156,7 @@ class _QuranReaderScreenState extends State<QuranReaderScreen> {
     super.initState();
     QuranStore.instance.setPosition(widget.surah, _openAyah);
     _countPage(_page);
+    _checkWirdEnd(_page);
     _loadTajweed();
     // Briefly highlight the verse that was opened (juz / bookmark / search).
     if (_openAyah > 1) {
@@ -179,16 +214,28 @@ class _QuranReaderScreenState extends State<QuranReaderScreen> {
   }
 
   /// Turns to the page of a verse (from the saved list).
-  void _goTo(int s, int a) => _pages.jumpToPage(_q.pageOf(s, a) - 1);
+  void _goTo(int s, int a) {
+    final page = _q.pageOf(s, a);
+    if (page < _firstPage || page > _lastPage) {
+      // Outside today's pages: open it in the full mushaf.
+      Navigator.of(context).pushReplacement(MaterialPageRoute(
+        builder: (_) => QuranReaderScreen(surah: s, ayah: a),
+      ));
+      return;
+    }
+    _pages.jumpToPage(page - _firstPage);
+  }
 
   void _onPageChanged(int index) {
+    if (index >= _windowPages) return; // the "done" page after today's reading
     setState(() {
-      _page = index + 1;
+      _page = _firstPage + index;
       _selected = null;
     });
     final (s, a) = _q.ayatOnPage(_page).first;
     QuranStore.instance.setPosition(s, a);
     _countPage(_page);
+    _checkWirdEnd(_page);
   }
 
   TapGestureRecognizer _tap(int s, int a) =>
@@ -212,21 +259,35 @@ class _QuranReaderScreenState extends State<QuranReaderScreen> {
   @override
   Widget build(BuildContext context) {
     return ListenableBuilder(
-      listenable: QuranStore.instance,
+      listenable: Listenable.merge([QuranStore.instance, AppSettings.instance]),
       builder: (context, _) {
         final store = QuranStore.instance;
         final size = store.size;
         final surah = _q.surah(_titleSurah(_page));
+        final titleText = Text(S.isArabic ? 'سورة ${surah.name}' : surah.translit,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: AppText.ui(size: 16, weight: FontWeight.w700));
         return Scaffold(
           backgroundColor: AppColors.ground,
           appBar: AppBar(
             backgroundColor: AppColors.ground,
             surfaceTintColor: Colors.transparent,
             titleSpacing: 0,
-            title: Text(S.isArabic ? 'سورة ${surah.name}' : surah.translit,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: AppText.ui(size: 16, weight: FontWeight.w700)),
+            title: _wird
+                ? Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      titleText,
+                      Text(
+                          context.tr('quran_wird_page', {
+                            'n': localNum(_page - _firstPage + 1),
+                            't': localNum(_windowPages),
+                          }),
+                          style: AppText.ui(size: 12, color: AppColors.gold)),
+                    ],
+                  )
+                : titleText,
             actions: [
               IconButton(
                 tooltip: context.tr('tajweed_title'),
@@ -247,9 +308,11 @@ class _QuranReaderScreenState extends State<QuranReaderScreen> {
             textDirection: TextDirection.rtl,
             child: PageView.builder(
               controller: _pages,
-              itemCount: _q.pageCount,
+              itemCount: _windowPages + (_wird ? 1 : 0),
               onPageChanged: _onPageChanged,
-              itemBuilder: (context, i) => _buildPage(i + 1, size, OrnamentPalette.of(store.ornament)),
+              itemBuilder: (context, i) => i >= _windowPages
+                  ? _WirdDone(nextPage: _lastPage + 1 > _q.pageCount ? 1 : _lastPage + 1)
+                  : _buildPage(_firstPage + i, size, OrnamentPalette.of(store.ornament)),
             ),
           ),
         );
@@ -370,6 +433,68 @@ class _QuranReaderScreenState extends State<QuranReaderScreen> {
               ),
             ),
           ),
+        ),
+      ),
+    );
+  }
+}
+
+/// After today's pages: well done, add a page to today's reading, or go on
+/// in the full mushaf.
+class _WirdDone extends StatelessWidget {
+  final int nextPage;
+  const _WirdDone({required this.nextPage});
+
+  @override
+  Widget build(BuildContext context) {
+    final settings = AppSettings.instance;
+    final q = QuranData.instance;
+    return Center(
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.all(28),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(Icons.verified_rounded, color: AppColors.gold, size: 64),
+            const SizedBox(height: 12),
+            Text(context.tr('quran_wird_done_title'),
+                textAlign: TextAlign.center,
+                style: AppText.ui(size: 20, weight: FontWeight.w700)),
+            const SizedBox(height: 6),
+            Text(context.tr('quran_wird_done_body'),
+                textAlign: TextAlign.center,
+                style: AppText.ui(size: 14, color: AppColors.muted, height: 1.6)),
+            const SizedBox(height: 22),
+            if (settings.quranPagesPerDay < AppSettings.maxQuranPagesPerDay)
+              FilledButton.icon(
+                onPressed: () => settings.setQuranPagesPerDay(settings.quranPagesPerDay + 1),
+                style: FilledButton.styleFrom(
+                  backgroundColor: AppColors.green,
+                  minimumSize: const Size(double.infinity, 50),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                ),
+                icon: const Icon(Icons.add),
+                label: Text(context.tr('quran_wird_add_page'),
+                    style: AppText.ui(size: 15, weight: FontWeight.w700, color: Colors.white)),
+              ),
+            const SizedBox(height: 10),
+            OutlinedButton.icon(
+              onPressed: () {
+                final (s, a) = q.ayatOnPage(nextPage).first;
+                Navigator.of(context).pushReplacement(MaterialPageRoute(
+                  builder: (_) => QuranReaderScreen(surah: s, ayah: a),
+                ));
+              },
+              style: OutlinedButton.styleFrom(
+                minimumSize: const Size(double.infinity, 50),
+                side: const BorderSide(color: AppColors.green),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+              ),
+              icon: const Icon(Icons.menu_book_outlined, color: AppColors.green),
+              label: Text(context.tr('quran_wird_open_full'),
+                  style: AppText.ui(size: 15, weight: FontWeight.w700, color: AppColors.green)),
+            ),
+          ],
         ),
       ),
     );
