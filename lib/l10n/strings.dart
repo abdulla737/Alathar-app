@@ -262,6 +262,7 @@ class S {
       'credits_body':
           '• نصوص الأحاديث وشروحها وترجماتها: موسوعة الأحاديث النبوية المترجمة HadeethEnc.com\n'
               '• ترقيم الكتب: وفق ترقيم Sunnah.com\n'
+              '• رياض الصالحين: النص والترجمة الإنجليزية من Sunnah.com\n'
               '• الأذكار: حصن المسلم للشيخ سعيد بن وهف القحطاني\n'
               '• نص المصحف: المصحف العثماني برواية حفص عن عاصم من Tanzil.net دون تعديل\n'
               '• ألوان التجويد: quran-tajweed (CC BY 4.0)\n'
@@ -596,6 +597,7 @@ class S {
       'credits_body':
           '• Hadith text, translations and explanations: HadeethEnc.com\n'
               '• Collection references: Sunnah.com numbering\n'
+              '• Riyad as-Salihin: text and English translation from Sunnah.com\n'
               '• Athkar: Hisn al-Muslim by Sa\'id al-Qahtani\n'
               '• Qur\'an text: Uthmani mushaf (Hafs ʿan ʿAsim) from Tanzil.net, unchanged\n'
               '• Tajweed colours: quran-tajweed (CC BY 4.0)\n'
@@ -930,6 +932,7 @@ class S {
       'credits_body':
           '• احادیث کا متن، ترجمہ اور تشریح: HadeethEnc.com\n'
               '• کتب کے حوالے: Sunnah.com کی ترقیم\n'
+              '• ریاض الصالحین: متن اور انگریزی ترجمہ Sunnah.com سے\n'
               '• اذکار: حصن المسلم از سعید بن وہف القحطانی\n'
               '• قرآن کا متن: مصحف عثمانی (روایت حفص عن عاصم) Tanzil.net سے، بغیر تبدیلی کے\n'
               '• تجوید کے رنگ: quran-tajweed (CC BY 4.0)\n'
