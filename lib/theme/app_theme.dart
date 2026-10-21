@@ -54,6 +54,55 @@ class AppColors {
   static const onNightBody = Color(0xFFE6ECF5);
 }
 
+/// Tajweed colors, as in the Dar al-Maarifah colour-coded mushaf. Each has
+/// a lighter tone for dark mode.
+class TajweedColors {
+  /// Madd lazim, 6 counts: dark red.
+  static const madd6 = _Adaptive(0xFFB00010, Color(0xFFFF6B6B));
+  /// Madd wajib (muttasil), 4–5 counts: red.
+  static const maddWajib = _Adaptive(0xFFE8263A, Color(0xFFFF8A8A));
+  /// Madd ja'iz (munfasil, ʿarid, leen), 2–4–6 counts: orange.
+  static const maddJaiz = _Adaptive(0xFFEF7D00, Color(0xFFFFB04D));
+  /// Natural madd, 2 counts: gold.
+  static const madd2 = _Adaptive(0xFFB98B00, Color(0xFFE3C15A));
+  /// Ghunnah, ikhfa, iqlab, idgham with ghunnah: green.
+  static const ghunnah = _Adaptive(0xFF16943A, Color(0xFF5FD27A));
+  /// Qalqalah: blue.
+  static const qalqalah = _Adaptive(0xFF1E7FD8, Color(0xFF6CB8FF));
+  /// Not pronounced (hamzat al-wasl, lam shamsiyyah, silent letters,
+  /// idgham without ghunnah): grey.
+  static const silent = _Adaptive(0xFF9A9A9A, Color(0xFF7C8580));
+
+  /// Color for a rule name from the tajweed data.
+  static Color? of(String rule) => switch (rule) {
+        'madd_6' => madd6,
+        'madd_muttasil' => maddWajib,
+        'madd_munfasil' || 'madd_246' => maddJaiz,
+        'madd_2' => madd2,
+        'ghunnah' || 'ikhfa' || 'ikhfa_shafawi' || 'iqlab' || 'idghaam_ghunnah' ||
+        'idghaam_shafawi' =>
+          ghunnah,
+        'qalqalah' => qalqalah,
+        'hamzat_wasl' || 'lam_shamsiyyah' || 'silent' || 'idghaam_no_ghunnah' ||
+        'idghaam_mutajanisayn' || 'idghaam_mutaqaribayn' =>
+          silent,
+        _ => null,
+      };
+
+  /// When rules overlap, the stronger one shows (madd over the rest).
+  static int priority(String rule) => switch (rule) {
+        'madd_6' => 9,
+        'madd_muttasil' => 8,
+        'madd_munfasil' || 'madd_246' => 7,
+        'madd_2' => 6,
+        'qalqalah' => 5,
+        'ghunnah' || 'ikhfa' || 'ikhfa_shafawi' || 'iqlab' || 'idghaam_ghunnah' ||
+        'idghaam_shafawi' =>
+          4,
+        _ => 1,
+      };
+}
+
 /// Text helpers.
 /// Interface text: IBM Plex Sans Arabic for Arabic/Urdu, Figtree for English.
 /// Hadith and dhikr text: Amiri.

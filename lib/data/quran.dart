@@ -26,8 +26,9 @@ class Surah {
 
 /// The whole Qur'an text, read from the app (no internet needed).
 ///
-/// Text: Mushaf al-Madinah, Hafs ʿan ʿAsim, King Fahd Glorious Qur'an
-/// Printing Complex (version 13), unchanged. Font: Amiri Quran (OFL).
+/// Text: Tanzil Uthmani (Hafs ʿan ʿAsim, tanzil.net), unchanged.
+/// Tajweed: quran-tajweed by cpfair (CC BY 4.0), aligned to this text.
+/// Font: Amiri Quran (OFL).
 class QuranData {
   QuranData._();
   static final QuranData instance = QuranData._();
@@ -92,6 +93,36 @@ class QuranData {
   }
 
   bool isSajda(int surah, int ayah) => _sajda.contains(indexOf(surah, ayah));
+
+  // ------------------------------------------------------------- Tajweed
+  List<String> _rules = const [];
+  List<List<int>> _tajweed = const [];
+  Future<void>? _tajweedLoading;
+
+  bool get hasTajweed => _tajweed.isNotEmpty;
+
+  /// Loads the tajweed rules (about 0.5 MB) the first time they are shown.
+  Future<void> ensureTajweed() =>
+      _tajweedLoading ??= _loadTajweed().catchError((Object e) {
+        _tajweedLoading = null;
+        throw e;
+      });
+
+  Future<void> _loadTajweed() async {
+    final raw = await rootBundle.loadString('assets/quran/tajweed.json');
+    final data = await compute(_decode, raw);
+    _rules = (data['rules'] as List).cast<String>();
+    _tajweed = [for (final a in (data['a'] as List)) (a as List).cast<int>()];
+  }
+
+  /// Tajweed rules in one verse: (rule, start, end) character ranges.
+  List<(String, int, int)> tajweedOf(int surah, int ayah) {
+    if (!hasTajweed) return const [];
+    final row = _tajweed[indexOf(surah, ayah)];
+    return [
+      for (var i = 0; i + 2 < row.length; i += 3) (_rules[row[i]], row[i + 1], row[i + 2]),
+    ];
+  }
 }
 
 /// Where the reader stopped, bookmarks and reading size. Saved on the phone.
@@ -105,6 +136,9 @@ class QuranStore extends ChangeNotifier {
   int lastAyah = 1;
   final Set<String> bookmarks = {}; // "surah:ayah"
 
+  /// Colour the text by tajweed rules (switch on the reading page).
+  bool tajweed = true;
+
   /// Qur'an text size on the reading page (its own A− / A+).
   double size = 28;
   static const minSize = 20.0;
@@ -114,6 +148,7 @@ class QuranStore extends ChangeNotifier {
   static const _kAyah = 'quran_last_ayah';
   static const _kBookmarks = 'quran_bookmarks';
   static const _kSize = 'quran_size';
+  static const _kTajweed = 'quran_tajweed';
 
   Future<void> load() async {
     final p = _prefs = await SharedPreferences.getInstance();
@@ -123,6 +158,7 @@ class QuranStore extends ChangeNotifier {
       ..clear()
       ..addAll(p.getStringList(_kBookmarks) ?? const []);
     size = (p.getDouble(_kSize) ?? 28).clamp(minSize, maxSize);
+    tajweed = p.getBool(_kTajweed) ?? true;
   }
 
   void setPosition(int surah, int ayah) {
@@ -150,6 +186,12 @@ class QuranStore extends ChangeNotifier {
         (int.parse(b.split(':')[0]), int.parse(b.split(':')[1])),
     ]..sort((a, b) => a.$1 != b.$1 ? a.$1.compareTo(b.$1) : a.$2.compareTo(b.$2));
     return list;
+  }
+
+  void setTajweed(bool value) {
+    tajweed = value;
+    _prefs?.setBool(_kTajweed, value);
+    notifyListeners();
   }
 
   void setSize(double value) {

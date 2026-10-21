@@ -21,6 +21,78 @@ TextStyle quranStyle(double size, {Color? color, double height = 2.1}) => TextSt
       color: color ?? AppColors.ink,
     );
 
+/// One verse as coloured pieces by its tajweed rules. Where rules overlap
+/// the stronger one shows; spaces keep the normal colour.
+List<InlineSpan> tajweedSpans(String text, List<(String, int, int)> rules,
+    {GestureRecognizer? recognizer, Color? background}) {
+  if (rules.isEmpty) {
+    return [
+      TextSpan(text: text, recognizer: recognizer, style: TextStyle(backgroundColor: background)),
+    ];
+  }
+  final colors = List<Color?>.filled(text.length, null);
+  final prio = List<int>.filled(text.length, 0);
+  for (final (rule, start, ruleEnd) in rules) {
+    final c = TajweedColors.of(rule);
+    if (c == null) continue;
+    final p = TajweedColors.priority(rule);
+    // Ikhfa, iqlab and idgham: colour only the noon / meem / tanween, as in
+    // the printed tajweed mushaf, not the letter it meets.
+    final end = _onlyFirstLetter.contains(rule) ? _firstLetterEnd(text, start, ruleEnd) : ruleEnd;
+    for (var i = start; i < end && i < text.length; i++) {
+      if (text.codeUnitAt(i) == 0x20) continue;
+      if (p >= prio[i]) {
+        colors[i] = c;
+        prio[i] = p;
+      }
+    }
+  }
+  final out = <InlineSpan>[];
+  var from = 0;
+  for (var i = 1; i <= text.length; i++) {
+    if (i == text.length || !identical(colors[i], colors[from])) {
+      out.add(TextSpan(
+        text: text.substring(from, i),
+        recognizer: recognizer,
+        style: TextStyle(color: colors[from], backgroundColor: background),
+      ));
+      from = i;
+    }
+  }
+  return out;
+}
+
+const _onlyFirstLetter = {
+  'ikhfa', 'ikhfa_shafawi', 'iqlab', 'idghaam_ghunnah', 'idghaam_no_ghunnah',
+  'idghaam_shafawi', 'idghaam_mutajanisayn', 'idghaam_mutaqaribayn',
+};
+
+/// Harakat and Qur'anic marks that sit on a letter.
+bool _isMark(int c) =>
+    (c >= 0x064B && c <= 0x065F) ||
+    c == 0x0670 ||
+    (c >= 0x06D6 && c <= 0x06DC) ||
+    (c >= 0x06DF && c <= 0x06E4) ||
+    c == 0x06E7 ||
+    c == 0x06E8 ||
+    (c >= 0x06EA && c <= 0x06ED);
+
+/// End of the first letter (with its marks) from [start], within one word.
+int _firstLetterEnd(String text, int start, int end) {
+  var i = start;
+  var letter = false;
+  while (i < end && i < text.length) {
+    final c = text.codeUnitAt(i);
+    if (c == 0x20) break;
+    if (!_isMark(c)) {
+      if (letter) break;
+      letter = true;
+    }
+    i++;
+  }
+  return i;
+}
+
 /// Verse end marker: ﴿١٢﴾.
 String ayahMarker(int ayah) => '﴿${arabicDigits(ayah)}﴾';
 
@@ -58,6 +130,24 @@ class _QuranReaderScreenState extends State<QuranReaderScreen> {
   void initState() {
     super.initState();
     QuranStore.instance.setPosition(_s.number, widget.ayah.clamp(1, _s.count));
+    _loadTajweed();
+  }
+
+  void _loadTajweed() {
+    final q = QuranData.instance;
+    if (!QuranStore.instance.tajweed || q.hasTajweed) return;
+    q.ensureTajweed().then((_) {
+      if (mounted) setState(() {});
+    }, onError: (Object e) => debugPrint('Tajweed not loaded: $e'));
+  }
+
+  void _showTajweedSheet() {
+    showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: AppColors.surface,
+      showDragHandle: true,
+      builder: (_) => const _TajweedSheet(),
+    ).then((_) => _loadTajweed());
   }
 
   @override
@@ -115,10 +205,11 @@ class _QuranReaderScreenState extends State<QuranReaderScreen> {
       final selected = _selected == a;
       final saved = store.isBookmarked(_s.number, a);
       final highlight = selected ? AppColors.greenSoft : null;
-      spans.add(TextSpan(
-        text: _s.ayat[a - 1],
+      spans.addAll(tajweedSpans(
+        _s.ayat[a - 1],
+        store.tajweed ? QuranData.instance.tajweedOf(_s.number, a) : const [],
         recognizer: _tap(a),
-        style: TextStyle(backgroundColor: highlight),
+        background: highlight,
       ));
       spans.add(TextSpan(
         text: ' ${ayahMarker(a)} ',
@@ -159,6 +250,12 @@ class _QuranReaderScreenState extends State<QuranReaderScreen> {
                 overflow: TextOverflow.ellipsis,
                 style: AppText.ui(size: 16, weight: FontWeight.w700)),
             actions: [
+              IconButton(
+                tooltip: context.tr('tajweed_title'),
+                onPressed: _showTajweedSheet,
+                icon: Icon(store.tajweed ? Icons.palette : Icons.palette_outlined,
+                    color: store.tajweed ? TajweedColors.maddJaiz : AppColors.muted),
+              ),
               TextSizeButtons(
                 onSmaller:
                     size > QuranStore.minSize ? () => store.setSize(size - 2) : null,
@@ -388,6 +485,70 @@ class _AyahSheet extends StatelessWidget {
           ),
         );
       },
+    );
+  }
+}
+
+/// «التجويد»: switch the colours on or off, and what each colour means.
+class _TajweedSheet extends StatelessWidget {
+  const _TajweedSheet();
+
+  @override
+  Widget build(BuildContext context) {
+    final store = QuranStore.instance;
+    final items = <(Color, String)>[
+      (TajweedColors.madd6, 'tj_madd6'),
+      (TajweedColors.maddWajib, 'tj_madd_wajib'),
+      (TajweedColors.maddJaiz, 'tj_madd_jaiz'),
+      (TajweedColors.madd2, 'tj_madd2'),
+      (TajweedColors.ghunnah, 'tj_ghunnah'),
+      (TajweedColors.qalqalah, 'tj_qalqalah'),
+      (TajweedColors.silent, 'tj_silent'),
+    ];
+    return ListenableBuilder(
+      listenable: store,
+      builder: (context, _) => SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.fromLTRB(20, 0, 20, 16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text(context.tr('tajweed_title'),
+                  style: AppText.ui(size: 17, weight: FontWeight.w700)),
+              SwitchListTile(
+                contentPadding: EdgeInsets.zero,
+                value: store.tajweed,
+                activeTrackColor: AppColors.green,
+                onChanged: store.setTajweed,
+                title: Text(context.tr('tajweed_switch'),
+                    style: AppText.ui(size: 15, weight: FontWeight.w600)),
+              ),
+              const Divider(color: AppColors.divider),
+              for (final (color, key) in items)
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 6),
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 18,
+                        height: 18,
+                        decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Text(context.tr(key),
+                            style: AppText.ui(size: 14, color: AppColors.body)),
+                      ),
+                    ],
+                  ),
+                ),
+              const SizedBox(height: 8),
+              Text(context.tr('tajweed_note'),
+                  style: AppText.ui(size: 12, color: AppColors.muted, height: 1.6)),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }
