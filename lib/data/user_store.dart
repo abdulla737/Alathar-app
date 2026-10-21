@@ -30,6 +30,10 @@ class UserStore extends ChangeNotifier {
   /// progress on the Today page)
   final Set<int> _read = {};
 
+  /// Books with completion ticks (Kitab at-Tawhid: chapters; the Forty:
+  /// hadith): collection id -> completed item ids
+  final Map<int, Set<int>> _bookDone = {};
+
   /// hadith ids read today (daily-goal progress); reset at midnight
   final Set<int> _readToday = {};
   String _readDay = '';
@@ -42,6 +46,7 @@ class UserStore extends ChangeNotifier {
 
   static const _kFavorites = 'favorites';
   static const _kRead = 'hadith_read';
+  static const _kBookDone = 'book_done_'; // + collection id
   static const _kReadToday = 'hadith_read_today'; // "YYYY-MM-DD:1,2,3"
   static const _kHistory = 'acted_history';
   static const _kActedPrefix = 'acted_';
@@ -55,6 +60,12 @@ class UserStore extends ChangeNotifier {
   Future<void> load() async {
     final p = _prefs = await SharedPreferences.getInstance();
     _read.addAll((p.getStringList(_kRead) ?? const []).map(int.tryParse).whereType<int>());
+    for (final key in p.getKeys()) {
+      if (!key.startsWith(_kBookDone)) continue;
+      final cid = int.tryParse(key.substring(_kBookDone.length));
+      if (cid == null) continue;
+      _bookDone[cid] = {...(p.getStringList(key) ?? const []).map(int.tryParse).whereType<int>()};
+    }
     final rt = p.getString(_kReadToday) ?? '';
     final colon = rt.indexOf(':');
     if (colon > 0) {
@@ -150,6 +161,29 @@ class UserStore extends ChangeNotifier {
     if (_readDay == today) return;
     _readDay = today;
     _readToday.clear();
+  }
+
+  // ------------------------------------------------- Book completion ticks
+
+  bool isBookItemDone(int collectionId, int itemId) =>
+      _bookDone[collectionId]?.contains(itemId) ?? false;
+
+  int bookDoneCount(int collectionId, Iterable<int> itemIds) =>
+      itemIds.where((id) => isBookItemDone(collectionId, id)).length;
+
+  void setBookItemDone(int collectionId, int itemId, bool done) {
+    final set = _bookDone.putIfAbsent(collectionId, () => {});
+    final changed = done ? set.add(itemId) : set.remove(itemId);
+    if (!changed) return;
+    _prefs?.setStringList('$_kBookDone$collectionId', [for (final id in set) '$id']);
+    notifyListeners();
+  }
+
+  /// Clears every tick in one book.
+  void resetBook(int collectionId) {
+    _bookDone.remove(collectionId);
+    _prefs?.remove('$_kBookDone$collectionId');
+    notifyListeners();
   }
 
   /// Undo "read and applied today" for a hadith.

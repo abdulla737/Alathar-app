@@ -13,7 +13,11 @@ import '../widgets/text_size_buttons.dart';
 
 class HadithDetailScreen extends StatelessWidget {
   final Hadith hadith;
-  const HadithDetailScreen({super.key, required this.hadith});
+
+  /// Opened from a book with completion ticks (the Forty): the slide bar then
+  /// marks this hadith as completed in that book.
+  final Collection? book;
+  const HadithDetailScreen({super.key, required this.hadith, this.book});
 
   static const _step = 2.0;
 
@@ -139,7 +143,15 @@ class HadithDetailScreen extends StatelessWidget {
             const SizedBox(height: 14),
             ListenableBuilder(
               listenable: store,
-              builder: (context, _) => SlideToConfirm(
+              builder: (context, _) => book != null
+                  ? SlideToConfirm(
+                      label: context.tr('book_slide_hadith'),
+                      doneLabel: context.tr('book_done_hadith'),
+                      confirmed: store.isBookItemDone(book!.id, h.id),
+                      onConfirm: () => store.setBookItemDone(book!.id, h.id, true),
+                      onUndo: () => store.setBookItemDone(book!.id, h.id, false),
+                    )
+                  : SlideToConfirm(
                 label: context.tr('hadith_slide_confirm'),
                 doneLabel: context.tr('hadith_confirmed'),
                 confirmed: store.readToday(h.id),

@@ -2,12 +2,15 @@ import 'package:flutter/material.dart';
 
 import '../data/app_settings.dart';
 import '../data/content_store.dart';
+import '../data/user_store.dart';
 import '../data/sample_data.dart';
 import '../l10n/strings.dart';
 import '../theme/app_theme.dart';
 import '../widgets/common.dart';
+import '../widgets/slide_to_confirm.dart';
 import '../widgets/entry_card.dart';
 import '../widgets/text_size_buttons.dart';
+import 'collection_screen.dart';
 import 'hadith_detail_screen.dart';
 
 /// One chapter (باب): its title, then its verses, hadith and athar in book
@@ -90,7 +93,33 @@ class ChapterScreen extends StatelessWidget {
                 ),
                 const SizedBox(height: 10),
               ],
-              if (ch.masail.v.isNotEmpty) ...[
+              if (ch.masail.v.isNotEmpty) ..._masail(context, ch),
+              // Kitab at-Tawhid: slide to mark this chapter as completed.
+              if (tracksCompletion(collection)) ...[
+                const SizedBox(height: 18),
+                ListenableBuilder(
+                  listenable: UserStore.instance,
+                  builder: (context, _) {
+                    final user = UserStore.instance;
+                    return SlideToConfirm(
+                      label: context.tr('book_slide_chapter'),
+                      doneLabel: context.tr('book_done_chapter'),
+                      confirmed: user.isBookItemDone(collection.id, ch.id),
+                      onConfirm: () => user.setBookItemDone(collection.id, ch.id, true),
+                      onUndo: () => user.setBookItemDone(collection.id, ch.id, false),
+                    );
+                  },
+                ),
+              ],
+            ],
+          ),
+          );
+        },
+      ),
+    );
+  }
+
+  List<Widget> _masail(BuildContext context, Chapter ch) => [
                 const SizedBox(height: 8),
                 AppCard(
                   radius: 18,
@@ -112,12 +141,5 @@ class ChapterScreen extends StatelessWidget {
                     ],
                   ),
                 ),
-              ],
-            ],
-          ),
-          );
-        },
-      ),
-    );
-  }
+      ];
 }

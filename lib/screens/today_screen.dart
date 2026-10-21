@@ -106,6 +106,9 @@ class TodayScreen extends StatelessWidget {
             const SizedBox(height: 16),
           ],
 
+          // «ورد التلاوة اليومية» first, then «ورد الحديث اليومي».
+          const QuranWirdCard(),
+          const SizedBox(height: 16),
           _HadithOfTheDayCard(
             onOpen: (h) => Navigator.of(context).push(MaterialPageRoute(
               builder: (_) => HadithDetailScreen(hadith: h),
@@ -194,8 +197,7 @@ class TodayScreen extends StatelessWidget {
           ),
           const SizedBox(height: 16),
 
-          // «وردك من القرآن»: where you stopped reading; tap to continue.
-          const QuranWirdCard(),
+
         ],
       ),
     );
