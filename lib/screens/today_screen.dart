@@ -318,6 +318,23 @@ class _HadithOfTheDayCard extends StatelessWidget {
 String _arabicDigits(int v) =>
     v.toString().split('').map((c) => '٠١٢٣٤٥٦٧٨٩'[int.parse(c)]).join();
 
+/// Minute ticks so the "time for athkar" highlight follows the clock.
+final Stream<void> _minuteTicks =
+    Stream<void>.periodic(const Duration(minutes: 1)).asBroadcastStream();
+
+/// Morning athkar start: Fajr (4:00 if no location is set yet).
+/// From then the card glows until tapped.
+bool isMorningAthkarTime(DateTime t) {
+  final day = PrayerStore.instance.dayOf(t);
+  return day == null ? t.hour >= 4 : !t.isBefore(day[Prayer.fajr]);
+}
+
+/// Evening athkar start: Asr (15:00 if no location is set yet).
+bool isEveningAthkarTime(DateTime t) {
+  final day = PrayerStore.instance.dayOf(t);
+  return day == null ? t.hour >= 15 : !t.isBefore(day[Prayer.asr]);
+}
+
 class _AthkarStatusCard extends StatefulWidget {
   final Widget icon;
   final String title;
