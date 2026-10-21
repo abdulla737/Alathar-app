@@ -135,31 +135,7 @@ class HadithDetailScreen extends StatelessWidget {
                       height: 1.7,
                       color: AppColors.body)),
             ],
-            // Today's action (if any), then slide right-to-left to confirm
-            // reading and applying it: completes «ورد الحديث اليومي».
-            if (h.action.v.isNotEmpty) ...[
-              const SizedBox(height: 16),
-              Container(
-                padding: const EdgeInsets.fromLTRB(14, 10, 14, 12),
-                decoration: BoxDecoration(
-                  color: AppColors.sandSoft,
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(context.tr('act_today'),
-                        style: AppText.ui(
-                            size: 12,
-                            weight: FontWeight.w700,
-                            color: AppColors.goldDark,
-                            letterSpacing: 0.6)),
-                    const SizedBox(height: 4),
-                    Text(h.action.v, style: AppText.ui(size: 14 * k, height: 1.5)),
-                  ],
-                ),
-              ),
-            ],
+            // Slide right-to-left to confirm reading: completes «ورد الحديث اليومي».
             const SizedBox(height: 14),
             ListenableBuilder(
               listenable: store,

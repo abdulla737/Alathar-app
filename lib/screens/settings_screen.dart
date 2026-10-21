@@ -321,7 +321,15 @@ class _QuranRangeRows extends StatelessWidget {
     final q = QuranData.instance;
     return FutureBuilder<void>(
       future: q.ensureLoaded(),
-      builder: (context, _) {
+      builder: (context, _) => ListenableBuilder(
+        // Redraw when the range changes (this widget is const).
+        listenable: settings,
+        builder: (context, _) => _rows(context, settings, q),
+      ),
+    );
+  }
+
+  Widget _rows(BuildContext context, AppSettings settings, QuranData q) {
         if (!q.isLoaded) return const SizedBox(height: 0);
         String label(Surah s) =>
             '${S.isArabic ? arabicDigits(s.number) : s.number}. ${S.isArabic ? s.name : s.translit}';
@@ -358,8 +366,6 @@ class _QuranRangeRows extends StatelessWidget {
                 (v) => settings.setQuranRange(settings.quranFromSurah, v)),
           ],
         );
-      },
-    );
   }
 }
 
