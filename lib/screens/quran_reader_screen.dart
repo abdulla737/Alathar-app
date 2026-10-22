@@ -1,6 +1,5 @@
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 
 import '../data/app_settings.dart';
 import '../data/quran.dart';
@@ -711,7 +710,7 @@ Future<void> showQuranBookmarks(BuildContext context,
   );
 }
 
-/// Actions for a tapped verse: bookmark, copy, share, "I stopped here".
+/// Actions for a tapped verse: bookmark, share, saved verses, tafsir.
 class _AyahSheet extends StatelessWidget {
   final Surah surah;
   final int ayah;
@@ -719,8 +718,6 @@ class _AyahSheet extends StatelessWidget {
   const _AyahSheet({required this.surah, required this.ayah, this.onBookmarks});
 
   String get _text => surah.ayat[ayah - 1];
-  String get _reference => '[${surah.name}: ${arabicDigits(ayah)}]';
-  String get _shareText => '$_text ${ayahMarker(ayah)}\n$_reference';
 
   @override
   Widget build(BuildContext context) {
@@ -771,14 +768,6 @@ class _AyahSheet extends StatelessWidget {
                         context.tr(saved ? 'quran_unbookmark' : 'quran_bookmark'),
                         () => store.toggleBookmark(surah.number, ayah),
                         on: saved),
-                    action(Icons.copy_rounded, context.tr('quran_copy'), () async {
-                      final messenger = ScaffoldMessenger.of(context);
-                      final done = context.tr('quran_copied');
-                      final nav = Navigator.of(context);
-                      await Clipboard.setData(ClipboardData(text: _shareText));
-                      nav.pop();
-                      messenger.showSnackBar(SnackBar(content: Text(done)));
-                    }),
                     action(Icons.ios_share, context.tr('quran_share'), () {
                       // Shared as a mushaf-style image (no text).
                       final nav = Navigator.of(context);
@@ -792,13 +781,6 @@ class _AyahSheet extends StatelessWidget {
                         Navigator.of(context).pop();
                         onBookmarks!();
                       }),
-                    action(Icons.flag_outlined, context.tr('quran_mark_read'), () {
-                      final messenger = ScaffoldMessenger.of(context);
-                      final done = context.tr('quran_marked');
-                      store.setPosition(surah.number, ayah);
-                      Navigator.of(context).pop();
-                      messenger.showSnackBar(SnackBar(content: Text(done)));
-                    }),
                   ],
                 ),
                 const SizedBox(height: 8),
