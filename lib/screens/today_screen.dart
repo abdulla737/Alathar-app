@@ -8,7 +8,6 @@ import '../data/sample_data.dart';
 import '../l10n/strings.dart';
 import '../theme/app_theme.dart';
 import '../widgets/common.dart';
-import '../widgets/name_dialog.dart';
 import '../widgets/time_now_card.dart';
 import '../widgets/prayer_card.dart';
 import '../widgets/quran_wird_card.dart';
@@ -50,14 +49,7 @@ class TodayScreen extends StatelessWidget {
                         style: AppText.ui(
                             size: 13, weight: FontWeight.w500, color: AppColors.muted)),
                     const SizedBox(height: 2),
-                    // «السلام عليكم عبدالله»; tap to add or change the name.
-                    GestureDetector(
-                      onTap: () => showNameDialog(context),
-                      child: Text(greetingText(context),
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                          style: AppText.title()),
-                    ),
+                    Text(context.tr('greeting'), style: AppText.title()),
                   ],
                 ),
               ),

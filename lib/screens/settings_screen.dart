@@ -7,7 +7,6 @@ import '../data/content_sync.dart';
 import '../data/user_store.dart';
 import '../l10n/strings.dart';
 import '../theme/app_theme.dart';
-import '../widgets/name_dialog.dart';
 import 'saved_screen.dart';
 
 class SettingsScreen extends StatelessWidget {
@@ -37,18 +36,6 @@ class SettingsScreen extends StatelessWidget {
             const SizedBox(height: 8),
             _Group(
               children: [
-                // «الاسم» for the Today greeting.
-                ListTile(
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 16),
-                  leading: const Icon(Icons.person_outline, color: AppColors.green),
-                  title: Text(context.tr('user_name_title'),
-                      style: AppText.ui(size: 15, weight: FontWeight.w600)),
-                  subtitle: Text(
-                      settings.userName.isEmpty ? context.tr('name_add') : settings.userName,
-                      style: AppText.ui(size: 12, color: AppColors.muted)),
-                  trailing: const Icon(Icons.chevron_right, color: AppColors.muted),
-                  onTap: () => showNameDialog(context),
-                ),
                 ListenableBuilder(
                   listenable: UserStore.instance,
                   builder: (context, _) => ListTile(
