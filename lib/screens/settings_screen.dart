@@ -382,6 +382,34 @@ class _QuranRangeRows extends StatelessWidget {
     );
   }
 
+  /// «ختمة» / «سور محددة»: confirm, then start the daily reading afresh
+  /// with that plan (the Today card «ورد التلاوة اليومية» starts at zero).
+  Future<void> _confirmPlan(BuildContext context, {required bool khatma}) async {
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(ctx.tr(khatma ? 'wird_new_khatma_q' : 'wird_new_range_q'),
+            style: AppText.ui(size: 17, weight: FontWeight.w700)),
+        content: Text(ctx.tr('wird_reset_body'), style: AppText.ui(size: 14, height: 1.6)),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: Text(ctx.tr('book_cancel'),
+                style: AppText.ui(size: 14, color: AppColors.muted)),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: Text(ctx.tr('quran_resume_yes'),
+                style: AppText.ui(size: 14, weight: FontWeight.w700, color: AppColors.green)),
+          ),
+        ],
+      ),
+    );
+    if (ok != true) return;
+    AppSettings.instance.setQuranKhatma(khatma);
+    QuranStore.instance.resetWird();
+  }
+
   Widget _rows(BuildContext context, AppSettings settings, QuranData q) {
     if (!q.isLoaded) return const SizedBox(height: 0);
     String nn(int n) => S.isArabic ? arabicDigits(n) : '$n';
@@ -452,9 +480,9 @@ class _QuranRangeRows extends StatelessWidget {
             child: Row(
               children: [
                 choice(context.tr('wird_khatma'), settings.quranKhatma,
-                    () => settings.setQuranKhatma(true)),
+                    () => _confirmPlan(context, khatma: true)),
                 choice(context.tr('wird_range'), !settings.quranKhatma,
-                    () => settings.setQuranKhatma(false)),
+                    () => _confirmPlan(context, khatma: false)),
               ],
             ),
           ),
@@ -463,10 +491,16 @@ class _QuranRangeRows extends StatelessWidget {
           // «من سورة»: any surah but the last; «إلى سورة»: only those after it.
           picker(context.tr('wird_from_surah'), settings.rangeFrom,
               q.surahs.where((s) => s.number < 114),
-              (v) => settings.setQuranRange(v, v >= settings.rangeTo ? v + 1 : settings.rangeTo)),
+              (v) {
+                settings.setQuranRange(v, v >= settings.rangeTo ? v + 1 : settings.rangeTo);
+                QuranStore.instance.resetWird();
+              }),
           picker(context.tr('wird_to_surah'), settings.rangeTo,
               q.surahs.where((s) => s.number > settings.rangeFrom),
-              (v) => settings.setQuranRange(settings.rangeFrom, v)),
+              (v) {
+                settings.setQuranRange(settings.rangeFrom, v);
+                QuranStore.instance.resetWird();
+              }),
         ],
         Padding(
           padding: const EdgeInsets.fromLTRB(16, 4, 16, 12),

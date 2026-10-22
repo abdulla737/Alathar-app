@@ -432,6 +432,24 @@ class QuranStore extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// A new daily-reading plan (Settings → «الورد اليومي»): today's pages,
+  /// where tomorrow starts and the khatma / range progress start from zero.
+  /// Completed khatmas are kept.
+  void resetWird() {
+    _wirdDay = '';
+    _wirdStart = null;
+    _wirdNext = null;
+    _cycleKey = '';
+    _furthest = 0;
+    _completedDay = '';
+    _pagesToday.clear();
+    _pagesDay = '';
+    _prefs?.remove(_kWird);
+    _prefs?.remove(_kPagesToday);
+    _saveCycle();
+    notifyListeners();
+  }
+
   void setOrnament(int value) {
     ornament = value;
     _prefs?.setInt(_kOrnament, value);

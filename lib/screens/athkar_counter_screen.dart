@@ -116,6 +116,37 @@ class _AthkarCounterScreenState extends State<AthkarCounterScreen> {
     super.dispose();
   }
 
+  /// Leaving a resumable sitting before the end: say it can be finished later.
+  bool get _leavesUnfinished =>
+      widget.progressKey != null &&
+      _completed < widget.athkar.length &&
+      _counts.any((n) => n > 0);
+
+  Future<void> _infoThenLeave() async {
+    await showDialog<void>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        icon: const Icon(Icons.info_outline, color: AppColors.green, size: 32),
+        content: Text(ctx.tr('athkar_later_info'),
+            textAlign: TextAlign.center,
+            style: AppText.ui(size: 16, weight: FontWeight.w600, height: 1.6)),
+        actionsAlignment: MainAxisAlignment.center,
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: Text(ctx.tr('ok'),
+                style: AppText.ui(size: 15, weight: FontWeight.w700, color: AppColors.green)),
+          ),
+        ],
+      ),
+    );
+    if (!mounted) return;
+    _toldLater = true;
+    Navigator.of(context).pop();
+  }
+
+  bool _toldLater = false;
+
   @override
   Widget build(BuildContext context) {
     final d = _current;
@@ -126,7 +157,12 @@ class _AthkarCounterScreenState extends State<AthkarCounterScreen> {
     final z = settings.athkarScale; // A− / A+ zoom
     void zoom(double by) => setState(() => settings.setAthkarScale(z + by));
 
-    return Scaffold(
+    return PopScope(
+      canPop: _toldLater || !_leavesUnfinished,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop) _infoThenLeave();
+      },
+      child: Scaffold(
       body: SafeArea(
         child: Column(
           children: [
@@ -388,6 +424,7 @@ class _AthkarCounterScreenState extends State<AthkarCounterScreen> {
             ),
           ],
         ),
+      ),
       ),
     );
   }
