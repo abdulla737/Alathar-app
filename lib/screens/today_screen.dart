@@ -109,18 +109,10 @@ class TodayScreen extends StatelessWidget {
           // «ورد التلاوة اليومية» first, then «ورد الحديث اليومي».
           const QuranWirdCard(),
           const SizedBox(height: 16),
-          // «الحديث اليومي»: one card per book — التوحيد, then رياض الصالحين.
+          // «الحديث اليومي - التوحيد».
           _HadithOfTheDayCard(
             collectionId: ContentStore.tawhidCollectionId,
             titleKey: 'hadith_daily_tawhid',
-            onOpen: (h) => Navigator.of(context).push(MaterialPageRoute(
-              builder: (_) => HadithDetailScreen(hadith: h),
-            )),
-          ),
-          const SizedBox(height: 16),
-          _HadithOfTheDayCard(
-            collectionId: ContentStore.riyadCollectionId,
-            titleKey: 'hadith_daily_riyad',
             onOpen: (h) => Navigator.of(context).push(MaterialPageRoute(
               builder: (_) => HadithDetailScreen(hadith: h),
             )),

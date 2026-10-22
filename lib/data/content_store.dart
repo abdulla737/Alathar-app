@@ -201,9 +201,8 @@ class ContentStore extends ChangeNotifier {
 
   static const _kHotd = 'hadith_of_the_day'; // "YYYY-MM-DD:id"
 
-  /// Books that have their own «الحديث اليومي» card on the Today page.
+  /// The book of the «الحديث اليومي» card on the Today page.
   static const tawhidCollectionId = 6; // كتاب التوحيد
-  static const riyadCollectionId = 2; // رياض الصالحين
 
   /// Hadith that may be a daily hadith, from one book (or all when null).
   List<Hadith> _dailyPool(int? collectionId) => allHadith

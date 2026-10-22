@@ -117,7 +117,6 @@ class S {
       'hadith_of_day': 'حديث اليوم',
       'hadith_wird': 'ورد الحديث اليومي',
       'hadith_daily_tawhid': 'الحديث اليومي - التوحيد',
-      'hadith_daily_riyad': 'الحديث اليومي - رياض الصالحين',
       'hadith_read_progress': 'قرأت {n} من {t} حديثاً',
       'hadith_read_full': 'اقرأ الحديث كاملاً',
       'hadith_done_today': 'قرأته اليوم',
@@ -269,7 +268,6 @@ class S {
       'credits_body':
           '• نصوص الأحاديث وشروحها وترجماتها: موسوعة الأحاديث النبوية المترجمة HadeethEnc.com\n'
               '• ترقيم الكتب: وفق ترقيم Sunnah.com\n'
-              '• رياض الصالحين: النص والترجمة الإنجليزية من Sunnah.com\n'
               '• الأذكار: حصن المسلم للشيخ سعيد بن وهف القحطاني\n'
               '• نص المصحف: المصحف العثماني برواية حفص عن عاصم من Tanzil.net دون تعديل\n'
               '• ألوان التجويد: quran-tajweed (CC BY 4.0)\n'
@@ -459,7 +457,6 @@ class S {
       'hadith_of_day': 'HADITH OF THE DAY',
       'hadith_wird': 'Today\'s hadith',
       'hadith_daily_tawhid': 'Daily hadith - Tawhid',
-      'hadith_daily_riyad': 'Daily hadith - Riyad as-Salihin',
       'hadith_read_progress': 'Read {n} of {t} hadith',
       'hadith_read_full': 'Read in full',
       'hadith_done_today': 'Read today',
@@ -611,7 +608,6 @@ class S {
       'credits_body':
           '• Hadith text, translations and explanations: HadeethEnc.com\n'
               '• Collection references: Sunnah.com numbering\n'
-              '• Riyad as-Salihin: text and English translation from Sunnah.com\n'
               '• Athkar: Hisn al-Muslim by Sa\'id al-Qahtani\n'
               '• Qur\'an text: Uthmani mushaf (Hafs ʿan ʿAsim) from Tanzil.net, unchanged\n'
               '• Tajweed colours: quran-tajweed (CC BY 4.0)\n'
@@ -801,7 +797,6 @@ class S {
       'hadith_of_day': 'آج کی حدیث',
       'hadith_wird': 'آج کا حدیثی ورد',
       'hadith_daily_tawhid': 'روزانہ حدیث - توحید',
-      'hadith_daily_riyad': 'روزانہ حدیث - ریاض الصالحین',
       'hadith_read_progress': '{t} میں سے {n} احادیث پڑھیں',
       'hadith_read_full': 'پوری حدیث پڑھیں',
       'hadith_done_today': 'آج پڑھ لی',
@@ -953,7 +948,6 @@ class S {
       'credits_body':
           '• احادیث کا متن، ترجمہ اور تشریح: HadeethEnc.com\n'
               '• کتب کے حوالے: Sunnah.com کی ترقیم\n'
-              '• ریاض الصالحین: متن اور انگریزی ترجمہ Sunnah.com سے\n'
               '• اذکار: حصن المسلم از سعید بن وہف القحطانی\n'
               '• قرآن کا متن: مصحف عثمانی (روایت حفص عن عاصم) Tanzil.net سے، بغیر تبدیلی کے\n'
               '• تجوید کے رنگ: quran-tajweed (CC BY 4.0)\n'

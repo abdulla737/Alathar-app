@@ -160,7 +160,7 @@ class SampleData {
 
   static const hadithOfTheDay = Hadith(
     id: 1,
-    collectionId: 2,
+    collectionId: 3,
     arabic: 'إِنَّمَا الْأَعْمَالُ بِالنِّيَّاتِ، وَإِنَّمَا لِكُلِّ امْرِئٍ مَا نَوَى',
     translation:
         '“Actions are only by intentions, and every person will have only what they intended.”',
@@ -174,7 +174,7 @@ class SampleData {
         en: 'Umar ibn al-Khattab',
         ur: 'عمر بن الخطاب رضی اللہ عنہ'),
     grade: LText(ar: 'صحيح', en: 'Sahih', ur: 'صحیح'),
-    collection: LText(ar: 'رياض الصالحين', en: 'Riyad as-Salihin', ur: 'ریاض الصالحین'),
+    collection: LText(ar: 'صحيح البخاري', en: 'Sahih al-Bukhari', ur: 'صحیح بخاری'),
     topic: LText(ar: 'النية', en: 'Intention', ur: 'نیت'),
     explanation: LText(
       ar: 'قيمة كل عمل بنيّة صاحبه؛ فالعمل الواحد قد يكون عبادة أو عادة بحسب القصد منه، '
@@ -285,7 +285,8 @@ class SampleData {
     attribution: LText(ar: '', en: ''),
   );
 
-  static const allHadith = <Hadith>[hadithOfTheDay, rightOfAllah, askAllah, ayahDhariyat];
+  // hadithOfTheDay is only a fallback (shown when nothing else is loaded).
+  static const allHadith = <Hadith>[rightOfAllah, askAllah, ayahDhariyat];
 
   /// Chapters bundled in the app (the rest download from Supabase).
   static const chapters = <Chapter>[
@@ -355,16 +356,6 @@ class SampleData {
             en: '42 hadith · Great for memorizing',
             ur: '42 احادیث · حفظ کے لیے بہترین'),
         1),
-    Collection(
-        2,
-        'riyad',
-        'رياض الصالحين',
-        LText(ar: 'رياض الصالحين', en: 'Riyad as-Salihin', ur: 'ریاض الصالحین'),
-        LText(
-            ar: 'الأخلاق والعبادة اليومية',
-            en: 'Daily character and worship',
-            ur: 'روزمرہ اخلاق اور عبادت'),
-        2),
     Collection(
         3,
         'bukhari',
