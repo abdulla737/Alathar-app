@@ -44,6 +44,9 @@ class UserStore extends ChangeNotifier {
   /// athkar category ids the user opened today (stops the Today-card glow)
   final Set<int> _athkarSeenToday = {};
 
+  /// «حان الوقت» occasions marked done ("YYYY-MM-DD key"), the last few days.
+  final List<String> _occasionsDone = [];
+
   static const _kFavorites = 'favorites';
   static const _kRead = 'hadith_read';
   static const _kBookDone = 'book_done_'; // + collection id
@@ -52,6 +55,7 @@ class UserStore extends ChangeNotifier {
   static const _kActedPrefix = 'acted_';
   static const _kAthkarPrefix = 'athkar_done_';
   static const _kSeenPrefix = 'athkar_seen_';
+  static const _kOccasions = 'occasions_done'; // ["2026-10-22 dhuhr", …]
 
   static String _dayKey(DateTime d) =>
       '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
@@ -120,11 +124,28 @@ class UserStore extends ChangeNotifier {
     for (final key in p.getKeys().where((k) => k.startsWith(_kSeenPrefix))) {
       if (key != '$_kSeenPrefix$_today') p.remove(key);
     }
+    _occasionsDone
+      ..clear()
+      ..addAll(p.getStringList(_kOccasions) ?? const []);
     final seen = p.getStringList('$_kSeenPrefix$_today') ?? const [];
     _athkarSeenToday.addAll(seen.map(int.parse));
   }
 
   /// Opened today (tapped the card or the category).
+  /// A «حان الوقت» occasion (e.g. "2026-10-22 after_dhuhr") is done.
+  bool occasionDone(String key) => _occasionsDone.contains(key);
+
+  void setOccasionDone(String key) {
+    if (_occasionsDone.contains(key)) return;
+    _occasionsDone.add(key);
+    // Two days of occasions are plenty (it shows only the current one).
+    while (_occasionsDone.length > 40) {
+      _occasionsDone.removeAt(0);
+    }
+    _prefs?.setStringList(_kOccasions, _occasionsDone);
+    notifyListeners();
+  }
+
   bool athkarSeenToday(int categoryId) {
     _rollDayIfNeeded();
     return _athkarSeenToday.contains(categoryId);

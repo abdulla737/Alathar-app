@@ -3,17 +3,14 @@ import 'package:flutter/material.dart';
 import '../data/app_settings.dart';
 import '../data/content_store.dart';
 import '../data/friday_data.dart';
-import '../data/prayer_store.dart';
-import '../data/prayer_times.dart';
 import '../data/user_store.dart';
 import '../data/sample_data.dart';
 import '../l10n/strings.dart';
 import '../theme/app_theme.dart';
 import '../widgets/common.dart';
-import '../widgets/athkar_time_banner.dart';
+import '../widgets/time_now_card.dart';
 import '../widgets/prayer_card.dart';
 import '../widgets/quran_wird_card.dart';
-import 'athkar_counter_screen.dart';
 import 'friday_screen.dart';
 import 'hadith_detail_screen.dart';
 import 'home_shell.dart';
@@ -90,8 +87,6 @@ class TodayScreen extends StatelessWidget {
 
           // Next prayer with a live countdown; tap for all times.
           const PrayerCard(),
-          // «حان وقت أذكار …» by the prayer times; hidden when not due.
-          const AthkarTimeBanner(),
           const SizedBox(height: 16),
 
           // Fridays: a Friday-sunnah hadith; tap for all of them. Always
@@ -119,91 +114,8 @@ class TodayScreen extends StatelessWidget {
           ),
           const SizedBox(height: 16),
 
-          // Morning / evening athkar: real counts, done-today from UserStore.
-          // From its time (morning 4:00, evening 15:00) the card glows until
-          // the user taps it; tapping opens that category's athkar.
-          StreamBuilder<void>(
-            stream: _minuteTicks,
-            builder: (context, _) => ListenableBuilder(
-            listenable: UserStore.instance,
-            builder: (context, _) {
-              final now = DateTime.now();
-              Widget card(String slug, String titleKey, Widget icon, String whenKey) {
-                final c = ContentStore.instance.athkarCategoryBySlug(slug);
-                final n = c == null ? 0 : ContentStore.instance.athkarIn(c.id).length;
-                final done = c != null && UserStore.instance.athkarDoneToday(c.id);
-                final seen = c != null && UserStore.instance.athkarSeenToday(c.id);
-                final due = !done &&
-                    !seen &&
-                    n > 0 &&
-                    (slug == 'morning' ? isMorningAthkarTime(now) : isEveningAthkarTime(now));
-                return _AthkarStatusCard(
-                  highlight: due,
-                  icon: icon,
-                  title: context.tr(titleKey),
-                  progress: done ? 1 : 0,
-                  // «بعد الفجر · عدد الأذكار: ١١»
-                  status: [
-                    context.tr(whenKey),
-                    done
-                        ? context.tr('completed_n', {'a': n, 'b': n})
-                        : context.tr('athkar_count', {'n': n}),
-                  ].join(' · '),
-                  trailing: done
-                      ? Container(
-                          width: 22,
-                          height: 22,
-                          decoration: const BoxDecoration(
-                              color: AppColors.green, shape: BoxShape.circle),
-                          child: Icon(Icons.check,
-                              size: 14,
-                              color: Colors.white,
-                              semanticLabel: context.tr('completed')),
-                        )
-                      : Text(context.tr(due ? 'athkar_now' : 'athkar_start'),
-                          style: AppText.ui(
-                              size: 15,
-                              weight: FontWeight.w700,
-                              color: due ? AppColors.goldDark : AppColors.green)),
-                  onTap: () {
-                    if (c == null || n == 0) {
-                      onOpenTab(AppTab.athkar);
-                      return;
-                    }
-                    UserStore.instance.setAthkarSeenToday(c.id);
-                    Navigator.of(context).push(MaterialPageRoute(
-                      builder: (_) => AthkarCounterScreen(
-                        title: c.name.v,
-                        athkar: ContentStore.instance.athkarIn(c.id),
-                        onFinished: () => UserStore.instance.setAthkarDoneToday(c.id),
-                      ),
-                    ));
-                  },
-                );
-              }
-
-              // One full-width card each: icon tile · title / «ابدأ» · bar · when.
-              Widget tile(IconData i, Color fg, Color bg) => Container(
-                    width: 56,
-                    height: 56,
-                    decoration: BoxDecoration(
-                        color: bg, borderRadius: BorderRadius.circular(16)),
-                    child: Icon(i, color: fg, size: 28),
-                  );
-              return Column(
-                children: [
-                  card('morning', 'morning_athkar',
-                      tile(Icons.wb_sunny_outlined, AppColors.goldDark, AppColors.sandSoft),
-                      'after_fajr'),
-                  const SizedBox(height: 12),
-                  card('evening', 'evening_athkar',
-                      tile(Icons.nights_stay_outlined, AppColors.green, AppColors.greenSoft),
-                      'after_asr'),
-                ],
-              );
-            },
-          ),
-          ),
+          // «حان الوقت»: the prayer or athkar of this moment, with ✓ when done.
+          const TimeNowCard(),
           const SizedBox(height: 16),
 
 
@@ -331,152 +243,6 @@ class _HadithOfTheDayCard extends StatelessWidget {
 
 String _arabicDigits(int v) =>
     v.toString().split('').map((c) => '٠١٢٣٤٥٦٧٨٩'[int.parse(c)]).join();
-
-/// Minute ticks so the "time for athkar" highlight follows the clock.
-final Stream<void> _minuteTicks =
-    Stream<void>.periodic(const Duration(minutes: 1)).asBroadcastStream();
-
-/// Morning athkar start: Fajr (4:00 if no location is set yet).
-/// From then the card glows until tapped.
-bool isMorningAthkarTime(DateTime t) {
-  final day = PrayerStore.instance.dayOf(t);
-  return day == null ? t.hour >= 4 : !t.isBefore(day[Prayer.fajr]);
-}
-
-/// Evening athkar start: Asr (15:00 if no location is set yet).
-bool isEveningAthkarTime(DateTime t) {
-  final day = PrayerStore.instance.dayOf(t);
-  return day == null ? t.hour >= 15 : !t.isBefore(day[Prayer.asr]);
-}
-
-class _AthkarStatusCard extends StatefulWidget {
-  final Widget icon;
-  final String title;
-  final double progress;
-  final String status;
-  final Widget trailing;
-  final VoidCallback onTap;
-
-  /// It's time for these athkar and they aren't done yet: pulse the card.
-  final bool highlight;
-
-  const _AthkarStatusCard({
-    required this.icon,
-    required this.title,
-    required this.progress,
-    required this.status,
-    required this.trailing,
-    required this.onTap,
-    this.highlight = false,
-  });
-
-  @override
-  State<_AthkarStatusCard> createState() => _AthkarStatusCardState();
-}
-
-class _AthkarStatusCardState extends State<_AthkarStatusCard>
-    with SingleTickerProviderStateMixin {
-  late final AnimationController _pulse = AnimationController(
-    vsync: this,
-    duration: const Duration(milliseconds: 1200),
-  );
-
-  @override
-  void initState() {
-    super.initState();
-    _sync();
-  }
-
-  @override
-  void didUpdateWidget(covariant _AthkarStatusCard old) {
-    super.didUpdateWidget(old);
-    _sync();
-  }
-
-  void _sync() {
-    if (widget.highlight && !_pulse.isAnimating) {
-      _pulse.repeat(reverse: true);
-    } else if (!widget.highlight && _pulse.isAnimating) {
-      _pulse.stop();
-      _pulse.value = 0;
-    }
-  }
-
-  @override
-  void dispose() {
-    _pulse.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final body = Row(
-      children: [
-        widget.icon,
-        const SizedBox(width: 14),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Expanded(
-                    child: Text(widget.title,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: AppText.ui(size: 17, weight: FontWeight.w700)),
-                  ),
-                  const SizedBox(width: 8),
-                  widget.trailing,
-                ],
-              ),
-              const SizedBox(height: 10),
-              ProgressLine(value: widget.progress, height: 8),
-              const SizedBox(height: 8),
-              Text(widget.status,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: AppText.ui(size: 13, color: AppColors.muted)),
-            ],
-          ),
-        ),
-      ],
-    );
-
-    if (!widget.highlight) {
-      return AppCard(onTap: widget.onTap, child: body);
-    }
-
-    // People who turned off animations get a steady gold border instead.
-    final still = MediaQuery.of(context).disableAnimations;
-    return AnimatedBuilder(
-      animation: _pulse,
-      builder: (context, child) {
-        final t = still ? 1.0 : Curves.easeInOut.transform(_pulse.value);
-        return DecoratedBox(
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(20),
-            boxShadow: [
-              BoxShadow(
-                color: AppColors.gold.withOpacity(0.15 + 0.25 * t),
-                blurRadius: 6 + 12 * t,
-                spreadRadius: 1 * t,
-              ),
-            ],
-          ),
-          child: AppCard(
-            onTap: widget.onTap,
-            color: Color.lerp(AppColors.surface, AppColors.sandSoft, 0.6 * t)!,
-            borderColor: Color.lerp(AppColors.line, AppColors.gold, 0.5 + 0.5 * t)!,
-            borderWidth: 1.5,
-            child: child!,
-          ),
-        );
-      },
-      child: body,
-    );
-  }
-}
 
 /// Friday card on Today: «تذكير بسنن يوم الجمعة» with one Friday hadith
 /// (a different one each week). Tap → all Friday sunnahs.
