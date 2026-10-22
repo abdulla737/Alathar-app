@@ -11,6 +11,7 @@ import '../widgets/common.dart';
 import '../widgets/time_now_card.dart';
 import '../widgets/prayer_card.dart';
 import '../widgets/quran_wird_card.dart';
+import '../widgets/story_card.dart';
 import 'friday_screen.dart';
 import 'hadith_detail_screen.dart';
 import 'home_shell.dart';
@@ -103,6 +104,10 @@ class TodayScreen extends StatelessWidget {
 
           // «حان الوقت»: the prayer or athkar of this moment, with ✓ when done.
           const TimeNowCard(),
+          const SizedBox(height: 16),
+
+          // «قصص قرآنية · قصة اليوم».
+          const StoryCard(),
           const SizedBox(height: 16),
 
           // «ورد التلاوة اليومية» first, then «ورد الحديث اليومي».

@@ -6,6 +6,7 @@ import '../data/tawheed_search.dart';
 import '../l10n/strings.dart';
 import '../theme/app_theme.dart';
 import '../widgets/common.dart';
+import '../widgets/story_library.dart';
 import 'quran_reader_screen.dart';
 
 /// «القرآن» tab: continue reading, search, and the list of surahs or juz.
@@ -19,7 +20,8 @@ class QuranScreen extends StatefulWidget {
 class _QuranScreenState extends State<QuranScreen> {
   final _search = TextEditingController();
   String _query = '';
-  bool _showJuz = false;
+  int _tab = 0; // 0 surahs, 1 juz, 2 «القصص»
+  bool get _showJuz => _tab == 1;
 
   @override
   void initState() {
@@ -136,6 +138,9 @@ class _QuranScreenState extends State<QuranScreen> {
     final store = QuranStore.instance;
     final surahs = _filtered(q.surahs);
     final searching = _query.trim().isNotEmpty;
+    final stories = _tab == 2;
+    // In «القصص» the search box filters the stories by name.
+    final verseSearch = searching && !stories;
 
     return ListView(
       padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
@@ -206,16 +211,23 @@ class _QuranScreenState extends State<QuranScreen> {
         if (!searching) ...[
           _ContinueCard(onOpen: _open),
           const SizedBox(height: 12),
+        ],
+        if (!verseSearch) ...[
           _Segment(
-            left: context.tr('quran_surahs'),
-            right: context.tr('quran_juz_tab'),
-            rightSelected: _showJuz,
-            onChanged: (juz) => setState(() => _showJuz = juz),
+            labels: [
+              context.tr('quran_surahs'),
+              context.tr('quran_juz_tab'),
+              context.tr('stories_tab'),
+            ],
+            selected: _tab,
+            onChanged: (i) => setState(() => _tab = i),
           ),
           const SizedBox(height: 12),
         ],
 
-        if (!searching && _showJuz)
+        if (stories)
+          StoryLibrary(query: _query)
+        else if (!searching && _showJuz)
           for (var j = 0; j < q.juzStarts.length; j++)
             _JuzRow(juz: j + 1, onOpen: _open)
         else if (searching)
@@ -279,19 +291,14 @@ class _ContinueCard extends StatelessWidget {
 }
 
 class _Segment extends StatelessWidget {
-  final String left;
-  final String right;
-  final bool rightSelected;
-  final ValueChanged<bool> onChanged;
-  const _Segment(
-      {required this.left,
-      required this.right,
-      required this.rightSelected,
-      required this.onChanged});
+  final List<String> labels;
+  final int selected;
+  final ValueChanged<int> onChanged;
+  const _Segment({required this.labels, required this.selected, required this.onChanged});
 
   @override
   Widget build(BuildContext context) {
-    Widget part(String label, bool selected, bool value) => Expanded(
+    Widget part(String label, bool selected, int value) => Expanded(
           child: GestureDetector(
             onTap: () => onChanged(value),
             child: AnimatedContainer(
@@ -316,7 +323,9 @@ class _Segment extends StatelessWidget {
         color: AppColors.segment,
         borderRadius: BorderRadius.circular(16),
       ),
-      child: Row(children: [part(left, !rightSelected, false), part(right, rightSelected, true)]),
+      child: Row(children: [
+        for (var i = 0; i < labels.length; i++) part(labels[i], i == selected, i),
+      ]),
     );
   }
 }
