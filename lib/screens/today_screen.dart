@@ -101,6 +101,10 @@ class TodayScreen extends StatelessWidget {
             const SizedBox(height: 16),
           ],
 
+          // «حان الوقت»: the prayer or athkar of this moment, with ✓ when done.
+          const TimeNowCard(),
+          const SizedBox(height: 16),
+
           // «ورد التلاوة اليومية» first, then «ورد الحديث اليومي».
           const QuranWirdCard(),
           const SizedBox(height: 16),
@@ -114,9 +118,6 @@ class TodayScreen extends StatelessWidget {
           ),
           const SizedBox(height: 16),
 
-          // «حان الوقت»: the prayer or athkar of this moment, with ✓ when done.
-          const TimeNowCard(),
-          const SizedBox(height: 16),
 
 
         ],

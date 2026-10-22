@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import '../data/content_store.dart';
 import '../data/prayer_store.dart';
 import '../data/prayer_times.dart';
+import '../data/sample_data.dart';
 import '../data/user_store.dart';
 import '../l10n/strings.dart';
 import '../screens/athkar_counter_screen.dart';
@@ -147,6 +148,7 @@ class _TimeNowCardState extends State<TimeNowCard> with SingleTickerProviderStat
       builder: (_) => AthkarCounterScreen(
         title: _title(context, o),
         athkar: store.athkarIn(c.id),
+        progressKey: o.key,
         onFinished: () {
           UserStore.instance.setOccasionDone(o.key);
           if (_sameDay(o.day, DateTime.now())) UserStore.instance.setAthkarDoneToday(c.id);
@@ -188,10 +190,22 @@ class _TimeNowCardState extends State<TimeNowCard> with SingleTickerProviderStat
         final c = o.athkarSlug == null
             ? null
             : ContentStore.instance.athkarCategoryBySlug(o.athkarSlug!);
-        final count = c == null ? 0 : ContentStore.instance.athkarIn(c.id).length;
+        final list = c == null ? const <Dhikr>[] : ContentStore.instance.athkarIn(c.id);
+        final count = list.length;
+        // Athkar started but not finished: how many are done so far.
+        final saved = UserStore.instance.athkarProgress(o.key);
+        final finishedN = saved == null || saved.length != count
+            ? 0
+            : [for (var i = 0; i < count; i++) if (saved[i] >= list[i].count) i].length;
+        final started = !done && saved != null && saved.any((n) => n > 0);
         final first = o.kind == 'prayer'
             ? context.tr('occ_adhan', {'t': formatPrayerTime(context, o.start)})
-            : context.tr('athkar_count', {'n': count});
+            : done
+                ? context.tr('completed_n', {'a': count, 'b': count})
+                : started
+                    ? context.tr('athkar_progress_n', {'a': finishedN, 'b': count})
+                    : context.tr('athkar_count', {'n': count});
+        final progress = done ? 1.0 : (count == 0 ? 0.0 : finishedN / count);
         final status = [
           first,
           context.tr('occ_next',
@@ -219,7 +233,7 @@ class _TimeNowCardState extends State<TimeNowCard> with SingleTickerProviderStat
                         style: AppText.ui(
                             size: 15, weight: FontWeight.w700, color: AppColors.green)),
                   )
-                : Text(context.tr('athkar_start'),
+                : Text(context.tr(started ? 'athkar_continue' : 'athkar_start'),
                     style: AppText.ui(size: 15, weight: FontWeight.w700, color: AppColors.green));
 
         final body = Row(
@@ -255,7 +269,7 @@ class _TimeNowCardState extends State<TimeNowCard> with SingleTickerProviderStat
                     ],
                   ),
                   const SizedBox(height: 10),
-                  ProgressLine(value: done ? 1 : 0, height: 8),
+                  ProgressLine(value: progress, height: 8),
                   const SizedBox(height: 8),
                   Text(status,
                       maxLines: 1,

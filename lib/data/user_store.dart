@@ -47,6 +47,10 @@ class UserStore extends ChangeNotifier {
   /// «حان الوقت» occasions marked done ("YYYY-MM-DD key"), the last few days.
   final List<String> _occasionsDone = [];
 
+  /// Athkar opened but not finished: the count of each dhikr, per sitting
+  /// ("YYYY-MM-DD morning", "YYYY-MM-DD after_dhuhr" …). Reopening resumes.
+  final Map<String, List<int>> _athkarProgress = {};
+
   static const _kFavorites = 'favorites';
   static const _kRead = 'hadith_read';
   static const _kBookDone = 'book_done_'; // + collection id
@@ -56,6 +60,7 @@ class UserStore extends ChangeNotifier {
   static const _kAthkarPrefix = 'athkar_done_';
   static const _kSeenPrefix = 'athkar_seen_';
   static const _kOccasions = 'occasions_done'; // ["2026-10-22 dhuhr", …]
+  static const _kAthkarProgress = 'athkar_progress'; // {"2026-10-22 morning": [3,1,0,…]}
 
   static String _dayKey(DateTime d) =>
       '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
@@ -127,11 +132,35 @@ class UserStore extends ChangeNotifier {
     _occasionsDone
       ..clear()
       ..addAll(p.getStringList(_kOccasions) ?? const []);
+    _athkarProgress.clear();
+    try {
+      final raw = p.getString(_kAthkarProgress);
+      if (raw != null) {
+        (jsonDecode(raw) as Map).forEach((k, v) =>
+            _athkarProgress[k as String] = [for (final n in v as List) (n as num).toInt()]);
+      }
+    } catch (_) {}
     final seen = p.getStringList('$_kSeenPrefix$_today') ?? const [];
     _athkarSeenToday.addAll(seen.map(int.parse));
   }
 
   /// Opened today (tapped the card or the category).
+  /// Saved counts of an unfinished sitting (null = not started).
+  List<int>? athkarProgress(String key) => _athkarProgress[key];
+
+  void setAthkarProgress(String key, List<int> counts) {
+    _athkarProgress.remove(key); // re-insert last (newest)
+    _athkarProgress[key] = List.of(counts);
+    while (_athkarProgress.length > 30) {
+      _athkarProgress.remove(_athkarProgress.keys.first);
+    }
+    _prefs?.setString(_kAthkarProgress, jsonEncode(_athkarProgress));
+    notifyListeners();
+  }
+
+  /// "YYYY-MM-DD what" for today (or [day]).
+  static String sittingKey(String what, [DateTime? day]) => '${_dayKey(day ?? DateTime.now())} $what';
+
   /// A «حان الوقت» occasion (e.g. "2026-10-22 after_dhuhr") is done.
   bool occasionDone(String key) => _occasionsDone.contains(key);
 

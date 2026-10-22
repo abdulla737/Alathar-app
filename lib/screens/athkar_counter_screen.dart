@@ -7,6 +7,7 @@ import '../config/audio_config.dart';
 import '../data/app_settings.dart';
 import '../data/audio_service.dart';
 import '../data/sample_data.dart';
+import '../data/user_store.dart';
 import '../l10n/strings.dart';
 import '../theme/app_theme.dart';
 import '../widgets/audio_button.dart';
@@ -23,17 +24,42 @@ class AthkarCounterScreen extends StatefulWidget {
   /// Called once when every dhikr in the list has reached its count.
   final VoidCallback? onFinished;
 
+  /// Saves the counts under this key as you go; opening again with the
+  /// same key resumes at the first dhikr not yet finished.
+  final String? progressKey;
+
   const AthkarCounterScreen(
-      {super.key, required this.title, required this.athkar, this.onFinished});
+      {super.key,
+      required this.title,
+      required this.athkar,
+      this.onFinished,
+      this.progressKey});
 
   @override
   State<AthkarCounterScreen> createState() => _AthkarCounterScreenState();
 }
 
 class _AthkarCounterScreenState extends State<AthkarCounterScreen> {
-  late final List<int> _counts = List.filled(widget.athkar.length, 0);
-  int _index = 0;
-  bool _reported = false;
+  late final List<int> _counts = _savedCounts();
+  // Resume at the first dhikr not finished yet.
+  late int _index = () {
+    final i = List.generate(widget.athkar.length, (i) => i)
+        .indexWhere((i) => _counts[i] < widget.athkar[i].count);
+    return i < 0 ? widget.athkar.length - 1 : i;
+  }();
+  late bool _reported = _completed == widget.athkar.length;
+
+  List<int> _savedCounts() {
+    final key = widget.progressKey;
+    final saved = key == null ? null : UserStore.instance.athkarProgress(key);
+    if (saved != null && saved.length == widget.athkar.length) return List.of(saved);
+    return List.filled(widget.athkar.length, 0);
+  }
+
+  void _save() {
+    final key = widget.progressKey;
+    if (key != null) UserStore.instance.setAthkarProgress(key, _counts);
+  }
 
   Dhikr get _current => widget.athkar[_index];
   int get _completed => List.generate(widget.athkar.length, (i) => i)
@@ -44,6 +70,7 @@ class _AthkarCounterScreenState extends State<AthkarCounterScreen> {
   void _tap() {
     if (_currentDone) return;
     setState(() => _counts[_index]++);
+    _save();
     if (_currentDone) {
       HapticFeedback.mediumImpact();
       if (!_reported && _completed == widget.athkar.length) {
@@ -62,7 +89,10 @@ class _AthkarCounterScreenState extends State<AthkarCounterScreen> {
     }
   }
 
-  void _reset() => setState(() => _counts[_index] = 0);
+  void _reset() {
+    setState(() => _counts[_index] = 0);
+    _save();
+  }
 
   void _next() {
     if (_index < widget.athkar.length - 1) {

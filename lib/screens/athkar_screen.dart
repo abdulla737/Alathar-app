@@ -19,6 +19,8 @@ class AthkarScreen extends StatelessWidget {
       builder: (_) => AthkarCounterScreen(
         title: c.name.v,
         athkar: athkar,
+        // Same sitting as «حان الوقت» for morning / evening / sleep.
+        progressKey: UserStore.sittingKey(c.slug),
         onFinished: () => UserStore.instance.setAthkarDoneToday(c.id),
       ),
     ));
