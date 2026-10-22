@@ -142,9 +142,13 @@ class TodayScreen extends StatelessWidget {
                   icon: icon,
                   title: context.tr(titleKey),
                   progress: done ? 1 : 0,
-                  status: done
-                      ? context.tr('completed_n', {'a': n, 'b': n})
-                      : context.tr('not_started_n', {'a': 0, 'b': n}),
+                  // «بعد الفجر · عدد الأذكار: ١١»
+                  status: [
+                    context.tr(whenKey),
+                    done
+                        ? context.tr('completed_n', {'a': n, 'b': n})
+                        : context.tr('athkar_count', {'n': n}),
+                  ].join(' · '),
                   trailing: done
                       ? Container(
                           width: 22,
@@ -156,12 +160,11 @@ class TodayScreen extends StatelessWidget {
                               color: Colors.white,
                               semanticLabel: context.tr('completed')),
                         )
-                      : due
-                          ? Pill(context.tr('athkar_now'),
-                              background: AppColors.gold, foreground: Colors.white)
-                          : Text(context.tr(whenKey),
-                              style: AppText.ui(
-                                  size: 11, weight: FontWeight.w600, color: AppColors.gold)),
+                      : Text(context.tr(due ? 'athkar_now' : 'athkar_start'),
+                          style: AppText.ui(
+                              size: 15,
+                              weight: FontWeight.w700,
+                              color: due ? AppColors.goldDark : AppColors.green)),
                   onTap: () {
                     if (c == null || n == 0) {
                       onOpenTab(AppTab.athkar);
@@ -179,20 +182,23 @@ class TodayScreen extends StatelessWidget {
                 );
               }
 
-              return Row(
+              // One full-width card each: icon tile · title / «ابدأ» · bar · when.
+              Widget tile(IconData i, Color fg, Color bg) => Container(
+                    width: 56,
+                    height: 56,
+                    decoration: BoxDecoration(
+                        color: bg, borderRadius: BorderRadius.circular(16)),
+                    child: Icon(i, color: fg, size: 28),
+                  );
+              return Column(
                 children: [
-                  Expanded(
-                    child: card('morning', 'morning_athkar',
-                        const Icon(Icons.wb_sunny_outlined, color: AppColors.gold, size: 22),
-                        'after_fajr'),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: card('evening', 'evening_athkar',
-                        const Icon(Icons.nights_stay_outlined,
-                            color: AppColors.green, size: 22),
-                        'after_asr'),
-                  ),
+                  card('morning', 'morning_athkar',
+                      tile(Icons.wb_sunny_outlined, AppColors.goldDark, AppColors.sandSoft),
+                      'after_fajr'),
+                  const SizedBox(height: 12),
+                  card('evening', 'evening_athkar',
+                      tile(Icons.nights_stay_outlined, AppColors.green, AppColors.greenSoft),
+                      'after_asr'),
                 ],
               );
             },
@@ -404,19 +410,36 @@ class _AthkarStatusCardState extends State<_AthkarStatusCard>
 
   @override
   Widget build(BuildContext context) {
-    final body = Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+    final body = Row(
       children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [widget.icon, widget.trailing],
+        widget.icon,
+        const SizedBox(width: 14),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(widget.title,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: AppText.ui(size: 17, weight: FontWeight.w700)),
+                  ),
+                  const SizedBox(width: 8),
+                  widget.trailing,
+                ],
+              ),
+              const SizedBox(height: 10),
+              ProgressLine(value: widget.progress, height: 8),
+              const SizedBox(height: 8),
+              Text(widget.status,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: AppText.ui(size: 13, color: AppColors.muted)),
+            ],
+          ),
         ),
-        const SizedBox(height: 10),
-        Text(widget.title, style: AppText.ui(size: 15, weight: FontWeight.w600)),
-        const SizedBox(height: 10),
-        ProgressLine(value: widget.progress),
-        const SizedBox(height: 10),
-        Text(widget.status, style: AppText.ui(size: 12, color: AppColors.muted)),
       ],
     );
 
