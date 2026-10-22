@@ -8,6 +8,7 @@ import '../l10n/strings.dart';
 import '../theme/app_theme.dart';
 import '../widgets/quran_share_card.dart';
 import '../widgets/quran_ornaments.dart';
+import '../widgets/tafsir_sheet.dart';
 import '../widgets/text_size_buttons.dart';
 
 /// Numbers in the app language: «١٢» in Arabic, "12" otherwise.
@@ -799,6 +800,26 @@ class _AyahSheet extends StatelessWidget {
                       messenger.showSnackBar(SnackBar(content: Text(done)));
                     }),
                   ],
+                ),
+                const SizedBox(height: 8),
+                // «تفسير السعدي» for this verse.
+                OutlinedButton.icon(
+                  onPressed: () {
+                    final nav = Navigator.of(context);
+                    final root = nav.context;
+                    nav.pop();
+                    showTafsir(root, surah.number, ayah);
+                  },
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: AppColors.green,
+                    side: const BorderSide(color: AppColors.green),
+                    minimumSize: const Size.fromHeight(46),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                  ),
+                  icon: const Icon(Icons.menu_book_rounded, size: 20),
+                  label: Text(context.tr('tafsir_saadi'),
+                      style: AppText.ui(
+                          size: 15, weight: FontWeight.w600, color: AppColors.green)),
                 ),
               ],
             ),

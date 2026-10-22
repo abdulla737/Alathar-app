@@ -72,6 +72,7 @@ flutter:
   assets:
     - assets/quran/quran.json
     - assets/quran/tajweed.json
+    - assets/quran/saadi.json.gz
 
   # Qur'an text font (Amiri Quran, SIL Open Font License), bundled so the
   # Qur'an reads correctly offline.
