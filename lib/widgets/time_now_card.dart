@@ -80,6 +80,31 @@ List<Occasion> occasionsOf(DateTime date) {
   return (all[i], all[(i + 1).clamp(0, all.length - 1)]);
 }
 
+/// Once the next occasion has started, the previous one's unfinished athkar
+/// are not kept: its saved progress is dropped (morning athkar left half-way
+/// start from the beginning tomorrow, after-Dhuhr ones are gone at Asr …).
+void dropEndedAthkarProgress([DateTime? at]) {
+  final now = at ?? DateTime.now();
+  final all = [
+    for (var d = -2; d <= 0; d++) ...occasionsOf(DateTime(now.year, now.month, now.day + d)),
+    ...occasionsOf(DateTime(now.year, now.month, now.day + 1)),
+  ]..sort((a, b) => a.start.compareTo(b.start));
+  final ended = <String>[];
+  for (var i = 0; i + 1 < all.length; i++) {
+    if (all[i].kind == 'prayer') continue;
+    if (!all[i + 1].start.isAfter(now)) ended.add(all[i].key);
+  }
+  UserStore.instance.dropAthkarProgress(ended);
+}
+
+/// The key the Athkar tab saves a category's progress under: the current
+/// occasion's when it is that athkar (shared with «حان الوقت»), else the day's.
+String athkarSittingKey(String slug) {
+  final (cur, _) = occasionNow(DateTime.now());
+  if (cur.athkarSlug == slug) return cur.key;
+  return UserStore.sittingKey(slug);
+}
+
 /// Today page: «حان الوقت» — the current prayer or athkar, one card.
 /// Tap → the prayer times, or that athkar. Done (✓) when the athkar are
 /// finished, or «صليت» is tapped for a prayer; the ✓ stays until the next
@@ -101,8 +126,11 @@ class _TimeNowCardState extends State<TimeNowCard> with SingleTickerProviderStat
     super.initState();
     // The next occasion starts by the clock: check every minute.
     _timer = Timer.periodic(const Duration(minutes: 1), (_) {
+      dropEndedAthkarProgress();
       if (mounted) setState(() {});
     });
+    // After the first frame: it may notify listeners.
+    WidgetsBinding.instance.addPostFrameCallback((_) => dropEndedAthkarProgress());
   }
 
   @override

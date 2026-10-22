@@ -118,9 +118,7 @@ class _AthkarCounterScreenState extends State<AthkarCounterScreen> {
 
   /// Leaving a resumable sitting before the end: say it can be finished later.
   bool get _leavesUnfinished =>
-      widget.progressKey != null &&
-      _completed < widget.athkar.length &&
-      _counts.any((n) => n > 0);
+      widget.progressKey != null && _completed < widget.athkar.length;
 
   Future<void> _infoThenLeave() async {
     await showDialog<void>(

@@ -6,6 +6,7 @@ import '../data/user_store.dart';
 import '../l10n/strings.dart';
 import '../theme/app_theme.dart';
 import '../widgets/common.dart';
+import '../widgets/time_now_card.dart';
 import 'athkar_counter_screen.dart';
 
 class AthkarScreen extends StatelessWidget {
@@ -15,13 +16,19 @@ class AthkarScreen extends StatelessWidget {
     final athkar = ContentStore.instance.athkarIn(c.id);
     if (athkar.isEmpty) return;
     UserStore.instance.setAthkarSeenToday(c.id);
+    dropEndedAthkarProgress();
+    final (current, _) = occasionNow(DateTime.now());
+    final key = athkarSittingKey(c.slug);
     Navigator.of(context).push(MaterialPageRoute(
       builder: (_) => AthkarCounterScreen(
         title: c.name.v,
         athkar: athkar,
-        // Same sitting as «حان الوقت» for morning / evening / sleep.
-        progressKey: UserStore.sittingKey(c.slug),
-        onFinished: () => UserStore.instance.setAthkarDoneToday(c.id),
+        // Same sitting as «حان الوقت» when it is that athkar's time.
+        progressKey: key,
+        onFinished: () {
+          UserStore.instance.setAthkarDoneToday(c.id);
+          if (key == current.key) UserStore.instance.setOccasionDone(key);
+        },
       ),
     ));
   }

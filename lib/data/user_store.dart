@@ -158,6 +158,17 @@ class UserStore extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Forgets the saved progress of these sittings (their time is over).
+  void dropAthkarProgress(Iterable<String> keys) {
+    var changed = false;
+    for (final k in keys) {
+      if (_athkarProgress.remove(k) != null) changed = true;
+    }
+    if (!changed) return;
+    _prefs?.setString(_kAthkarProgress, jsonEncode(_athkarProgress));
+    notifyListeners();
+  }
+
   /// "YYYY-MM-DD what" for today (or [day]).
   static String sittingKey(String what, [DateTime? day]) => '${_dayKey(day ?? DateTime.now())} $what';
 
