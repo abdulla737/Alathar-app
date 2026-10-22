@@ -160,11 +160,11 @@ class SampleData {
 
   static const hadithOfTheDay = Hadith(
     id: 1,
-    collectionId: 3,
+    collectionId: 1,
     arabic: 'إِنَّمَا الْأَعْمَالُ بِالنِّيَّاتِ، وَإِنَّمَا لِكُلِّ امْرِئٍ مَا نَوَى',
     translation:
         '“Actions are only by intentions, and every person will have only what they intended.”',
-    reference: LText(ar: 'صحيح البخاري 1', en: 'Sahih al-Bukhari 1', ur: 'صحیح بخاری 1'),
+    reference: LText(ar: 'الأربعون النووية 1', en: 'The 40 Hadith of an-Nawawi 1', ur: 'اربعین نووی 1'),
     fullReference: LText(
         ar: 'البخاري 1 · مسلم 1907',
         en: 'Bukhari 1 · Muslim 1907',
@@ -174,7 +174,7 @@ class SampleData {
         en: 'Umar ibn al-Khattab',
         ur: 'عمر بن الخطاب رضی اللہ عنہ'),
     grade: LText(ar: 'صحيح', en: 'Sahih', ur: 'صحیح'),
-    collection: LText(ar: 'صحيح البخاري', en: 'Sahih al-Bukhari', ur: 'صحیح بخاری'),
+    collection: LText(ar: 'الأربعون النووية', en: 'The 40 Hadith of an-Nawawi', ur: 'اربعین نووی'),
     topic: LText(ar: 'النية', en: 'Intention', ur: 'نیت'),
     explanation: LText(
       ar: 'قيمة كل عمل بنيّة صاحبه؛ فالعمل الواحد قد يكون عبادة أو عادة بحسب القصد منه، '
@@ -192,7 +192,7 @@ class SampleData {
 
   static const rightOfAllah = Hadith(
     id: 2,
-    collectionId: 3,
+    collectionId: 6,
     chapterId: 1, // also quoted in Kitab at-Tawhid, chapter 1
     numberInBook: 1,
     arabic:
@@ -208,7 +208,7 @@ class SampleData {
     narrator: LText(
         ar: 'معاذ بن جبل رضي الله عنه', en: 'Mu\'adh ibn Jabal', ur: 'معاذ بن جبل رضی اللہ عنہ'),
     grade: LText(ar: 'صحيح', en: 'Sahih', ur: 'صحیح'),
-    collection: LText(ar: 'صحيح البخاري', en: 'Sahih al-Bukhari', ur: 'صحیح بخاری'),
+    collection: LText(ar: 'كتاب التوحيد', en: 'Kitab at-Tawhid', ur: 'کتاب التوحید'),
     topic: LText(ar: 'التوحيد', en: 'Tawheed', ur: 'توحید'),
     explanation: LText(
       ar: 'بيّن النبي ﷺ أن أعظم ما أوجبه الله على عباده أن يفردوه بالعبادة ولا يشركوا به شيئًا، '
@@ -356,33 +356,6 @@ class SampleData {
             en: '42 hadith · Great for memorizing',
             ur: '42 احادیث · حفظ کے لیے بہترین'),
         1),
-    Collection(
-        3,
-        'bukhari',
-        'البخاري',
-        LText(ar: 'صحيح البخاري', en: 'Sahih al-Bukhari', ur: 'صحیح بخاری'),
-        LText(
-            ar: 'الكتاب كاملًا · تنزيل اختياري',
-            en: 'Full collection · Optional download',
-            ur: 'مکمل کتاب · اختیاری ڈاؤن لوڈ'),
-        3),
-    Collection(
-        4,
-        'muslim',
-        'مسلم',
-        LText(ar: 'صحيح مسلم', en: 'Sahih Muslim', ur: 'صحیح مسلم'),
-        LText(
-            ar: 'الكتاب كاملًا · تنزيل اختياري',
-            en: 'Full collection · Optional download',
-            ur: 'مکمل کتاب · اختیاری ڈاؤن لوڈ'),
-        4),
-    Collection(
-        5,
-        'bulugh',
-        'بلوغ المرام',
-        LText(ar: 'بلوغ المرام', en: 'Bulugh al-Maram', ur: 'بلوغ المرام'),
-        LText(ar: 'أحاديث الأحكام', en: 'Hadith of rulings', ur: 'احکام کی احادیث'),
-        5),
     Collection(
         6,
         'kitab-at-tawhid',
