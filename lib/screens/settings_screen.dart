@@ -455,6 +455,21 @@ class _QuranRangeRows extends StatelessWidget {
                   : context.tr('wird_khatma_days', {'d': nn(days), 'p': nn(perDay)}),
               style: AppText.ui(size: 13, color: AppColors.gold, weight: FontWeight.w600)),
         ),
+        // What «صفحة» means: one side of a mushaf leaf.
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Icon(Icons.info_outline, color: AppColors.muted, size: 16),
+              const SizedBox(width: 6),
+              Expanded(
+                child: Text(context.tr('wird_page_hint'),
+                    style: AppText.ui(size: 12, height: 1.5, color: AppColors.muted)),
+              ),
+            ],
+          ),
+        ),
         Padding(
           padding: const EdgeInsets.fromLTRB(16, 0, 16, 14),
           child: OutlinedButton.icon(
