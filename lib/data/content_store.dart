@@ -59,10 +59,17 @@ class ContentStore extends ChangeNotifier {
         if (sync != null) _lastSync[t] = sync;
         final raw = p.getString(_kRows(t));
         if (raw == null) continue;
+        var slimmed = false;
         for (final row in jsonDecode(raw) as List) {
-          final m = Map<String, dynamic>.from(row as Map);
+          var m = Map<String, dynamic>.from(row as Map);
+          // Deleted rows saved by older versions still hold their text.
+          if (m['deleted'] == true && m.length > 3) {
+            m = {'id': m['id'], 'deleted': true, 'updated_at': m['updated_at']};
+            slimmed = true;
+          }
           _rows[t]![m['id'] as int] = m;
         }
+        if (slimmed) p.setString(_kRows(t), jsonEncode(_rows[t]!.values.toList()));
       }
     } catch (_) {
       // Bad cache: drop it and download everything again next time.
@@ -78,7 +85,12 @@ class ContentStore extends ChangeNotifier {
   void applyRows(String table, List<Map<String, dynamic>> rows) {
     final store = _rows[table]!;
     for (final row in rows) {
-      store[row['id'] as int] = row;
+      // A deleted row keeps only its id (so it stays hidden and can still
+      // hide bundled text with the same id); its text is not kept on the
+      // phone.
+      store[row['id'] as int] = row['deleted'] == true
+          ? {'id': row['id'], 'deleted': true, 'updated_at': row['updated_at']}
+          : row;
       final updated = row['updated_at'] as String?;
       final last = _lastSync[table];
       if (updated != null && (last == null || updated.compareTo(last) > 0)) {
