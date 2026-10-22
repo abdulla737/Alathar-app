@@ -11,7 +11,7 @@ Future<void> showNameDialog(BuildContext context) async {
   final name = await showDialog<String>(
     context: context,
     builder: (ctx) => AlertDialog(
-      title: Text(ctx.tr('name_title'), style: AppText.ui(size: 17, weight: FontWeight.w700)),
+      title: Text(ctx.tr('user_name_title'), style: AppText.ui(size: 17, weight: FontWeight.w700)),
       content: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,

@@ -41,7 +41,7 @@ class SettingsScreen extends StatelessWidget {
                 ListTile(
                   contentPadding: const EdgeInsets.symmetric(horizontal: 16),
                   leading: const Icon(Icons.person_outline, color: AppColors.green),
-                  title: Text(context.tr('name_title'),
+                  title: Text(context.tr('user_name_title'),
                       style: AppText.ui(size: 15, weight: FontWeight.w600)),
                   subtitle: Text(
                       settings.userName.isEmpty ? context.tr('name_add') : settings.userName,
