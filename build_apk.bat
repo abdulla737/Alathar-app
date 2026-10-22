@@ -36,8 +36,9 @@ echo ----- flutter pub get >> build_log.txt
 call flutter pub get >> build_log.txt 2>&1
 
 echo [3/3] Building APK...
-echo ----- flutter build apk --%MODE% >> build_log.txt
-call flutter build apk --%MODE% >> build_log.txt 2>&1
+rem --no-tree-shake-icons: Windows Smart App Control blocks Flutter's font-subset.exe
+echo ----- flutter build apk --%MODE% --no-tree-shake-icons >> build_log.txt
+call flutter build apk --%MODE% --no-tree-shake-icons >> build_log.txt 2>&1
 echo EXIT CODE %errorlevel% >> build_log.txt
 
 set "OUT=build\app\outputs\flutter-apk\app-%MODE%.apk"
