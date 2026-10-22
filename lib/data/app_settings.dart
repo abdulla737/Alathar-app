@@ -99,7 +99,8 @@ class AppSettings extends ChangeNotifier {
     translation = p.getString(_kTranslation) ?? 'English';
     hadithPerDay = (p.getInt(_kHadithPerDay) ?? 1).clamp(1, maxHadithPerDay);
     quranPagesPerDay = (p.getInt(_kQuranPages) ?? 2).clamp(1, maxQuranPagesPerDay);
-    quranKhatma = p.getBool(_kQuranKhatma) ?? true;
+    // The daily reading is always a khatma (chosen surahs were removed).
+    quranKhatma = true;
     rangeFrom = (p.getInt(_kQuranFrom) ?? 1).clamp(1, 113);
     rangeTo = (p.getInt(_kQuranTo) ?? 114).clamp(rangeFrom + 1, 114);
     onboardingDone = p.getBool(_kOnboarding) ?? false;

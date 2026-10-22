@@ -364,7 +364,7 @@ class _StepperRow extends StatelessWidget {
   }
 }
 
-/// «من سورة» / «إلى سورة» for the daily Qur'an reading.
+/// «ختمة»: days left at the chosen pages per day, and «قراءة ختمة جديدة».
 class _QuranRangeRows extends StatelessWidget {
   const _QuranRangeRows();
 
@@ -375,8 +375,8 @@ class _QuranRangeRows extends StatelessWidget {
     return FutureBuilder<void>(
       future: q.ensureLoaded(),
       builder: (context, _) => ListenableBuilder(
-        // Redraw when the range changes (this widget is const).
-        listenable: settings,
+        // Redraw when pages per day or the khatma progress change.
+        listenable: Listenable.merge([settings, QuranStore.instance]),
         builder: (context, _) => _rows(context, settings, q),
       ),
     );
@@ -388,13 +388,13 @@ class _QuranRangeRows extends StatelessWidget {
     QuranStore.instance.resetWird(first);
   }
 
-  /// «ختمة» / «سور محددة»: confirm, then start the daily reading afresh
-  /// with that plan (the Today card «ورد التلاوة اليومية» starts at zero).
-  Future<void> _confirmPlan(BuildContext context, {required bool khatma}) async {
+  /// «قراءة ختمة جديدة»: confirm, then start the daily reading afresh from
+  /// al-Fatiha (the Today card «ورد التلاوة اليومية» starts at zero).
+  Future<void> _confirmNewKhatma(BuildContext context) async {
     final ok = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: Text(ctx.tr(khatma ? 'wird_new_khatma_q' : 'wird_new_range_q'),
+        title: Text(ctx.tr('wird_new_khatma_q'),
             style: AppText.ui(size: 17, weight: FontWeight.w700)),
         content: Text(ctx.tr('wird_reset_body'), style: AppText.ui(size: 14, height: 1.6)),
         actions: [
@@ -412,111 +412,63 @@ class _QuranRangeRows extends StatelessWidget {
       ),
     );
     if (ok != true) return;
-    AppSettings.instance.setQuranKhatma(khatma);
+    AppSettings.instance.setQuranKhatma(true);
     _restartWird();
   }
 
   Widget _rows(BuildContext context, AppSettings settings, QuranData q) {
     if (!q.isLoaded) return const SizedBox(height: 0);
     String nn(int n) => S.isArabic ? arabicDigits(n) : '$n';
-    String label(Surah s) => '${nn(s.number)}. ${S.isArabic ? s.name : s.translit}';
 
-    Widget choice(String text, bool selected, VoidCallback onTap) => Expanded(
-          child: GestureDetector(
-            onTap: onTap,
-            child: AnimatedContainer(
-              duration: const Duration(milliseconds: 160),
-              padding: const EdgeInsets.symmetric(vertical: 9),
-              decoration: BoxDecoration(
-                color: selected ? AppColors.surface : Colors.transparent,
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Text(text,
-                  textAlign: TextAlign.center,
-                  style: AppText.ui(
-                      size: 14,
-                      weight: selected ? FontWeight.w700 : FontWeight.w500,
-                      color: selected ? AppColors.ink : AppColors.muted)),
-            ),
-          ),
-        );
-
-    Widget picker(String title, int value, Iterable<Surah> options, ValueChanged<int> onChanged) =>
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-          child: Row(
-            children: [
-              Expanded(
-                child: Text(title, style: AppText.ui(size: 15, weight: FontWeight.w600)),
-              ),
-              DropdownButton<int>(
-                value: value,
-                underline: const SizedBox.shrink(),
-                borderRadius: BorderRadius.circular(12),
-                menuMaxHeight: 420,
-                style: AppText.ui(size: 14),
-                items: [
-                  for (final s in options)
-                    DropdownMenuItem(value: s.number, child: Text(label(s))),
-                ],
-                onChanged: (v) {
-                  if (v != null) onChanged(v);
-                },
-              ),
-            ],
-          ),
-        );
-
-    // Pages the daily reading covers.
-    final fromPage = q.pageOf(settings.quranFromSurah, 1);
-    final last = q.surah(settings.quranToSurah);
-    final toPage = q.pageOf(last.number, last.count);
+    // The whole mushaf; how much of this khatma is left, and how many days
+    // that takes at the chosen pages per day.
+    final total = q.pageCount;
+    final done = QuranStore.instance.pagesDone(1, total);
+    final left = total - done;
+    final perDay = settings.quranPagesPerDay;
+    final days = (left / perDay).ceil();
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Padding(
-          padding: const EdgeInsets.fromLTRB(16, 10, 16, 6),
-          child: Container(
-            padding: const EdgeInsets.all(4),
-            decoration: BoxDecoration(
-              color: AppColors.segment,
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: Row(
-              children: [
-                choice(context.tr('wird_khatma'), settings.quranKhatma,
-                    () => _confirmPlan(context, khatma: true)),
-                choice(context.tr('wird_range'), !settings.quranKhatma,
-                    () => _confirmPlan(context, khatma: false)),
-              ],
-            ),
+          padding: const EdgeInsets.fromLTRB(16, 10, 16, 4),
+          child: Row(
+            children: [
+              const Icon(Icons.auto_stories_outlined, color: AppColors.gold, size: 20),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(context.tr('wird_khatma'),
+                    style: AppText.ui(size: 15, weight: FontWeight.w600)),
+              ),
+              Text(context.tr('wird_khatma_pages', {'t': nn(total)}),
+                  style: AppText.ui(size: 13, color: AppColors.muted)),
+            ],
           ),
         ),
-        if (!settings.quranKhatma) ...[
-          // «من سورة»: any surah but the last; «إلى سورة»: only those after it.
-          picker(context.tr('wird_from_surah'), settings.rangeFrom,
-              q.surahs.where((s) => s.number < 114),
-              (v) {
-                settings.setQuranRange(v, v >= settings.rangeTo ? v + 1 : settings.rangeTo);
-                _restartWird();
-              }),
-          picker(context.tr('wird_to_surah'), settings.rangeTo,
-              q.surahs.where((s) => s.number > settings.rangeFrom),
-              (v) {
-                settings.setQuranRange(settings.rangeFrom, v);
-                _restartWird();
-              }),
-        ],
         Padding(
-          padding: const EdgeInsets.fromLTRB(16, 4, 16, 12),
+          padding: const EdgeInsets.fromLTRB(16, 2, 16, 10),
           child: Text(
-              context.tr('wird_pages_range', {
-                'a': nn(fromPage),
-                'b': nn(toPage),
-                'n': nn(toPage - fromPage + 1),
-              }),
+              done > 0
+                  ? context.tr('wird_khatma_days_left',
+                      {'d': nn(days), 'r': nn(left), 'p': nn(perDay)})
+                  : context.tr('wird_khatma_days', {'d': nn(days), 'p': nn(perDay)}),
               style: AppText.ui(size: 13, color: AppColors.gold, weight: FontWeight.w600)),
+        ),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 0, 16, 14),
+          child: OutlinedButton.icon(
+            onPressed: () => _confirmNewKhatma(context),
+            icon: const Icon(Icons.restart_alt, size: 20),
+            label: Text(context.tr('wird_new_khatma_btn'),
+                style: AppText.ui(size: 15, weight: FontWeight.w700, color: AppColors.green)),
+            style: OutlinedButton.styleFrom(
+              foregroundColor: AppColors.green,
+              side: const BorderSide(color: AppColors.green, width: 1.2),
+              padding: const EdgeInsets.symmetric(vertical: 12),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+            ),
+          ),
         ),
       ],
     );
