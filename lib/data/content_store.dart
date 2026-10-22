@@ -49,6 +49,18 @@ class ContentStore extends ChangeNotifier {
 
   String? lastSync(String table) => _lastSync[table];
 
+  /// Books taken out of the app (رياض الصالحين، صحيح البخاري، صحيح مسلم،
+  /// بلوغ المرام). Their rows are deleted on the server; this also clears
+  /// any copy a phone downloaded earlier.
+  static const removedBooks = {2, 3, 4, 5};
+
+  static bool _isRemovedBook(String table, Map<String, dynamic> row) =>
+      switch (table) {
+        'collections' => removedBooks.contains(row['id']),
+        'hadith' || 'chapters' => removedBooks.contains(row['collection_id']),
+        _ => false,
+      };
+
   Future<void> load() async {
     final p = _prefs = await SharedPreferences.getInstance();
     version = p.getInt(_kVersion) ?? 0;
@@ -62,6 +74,11 @@ class ContentStore extends ChangeNotifier {
         var slimmed = false;
         for (final row in jsonDecode(raw) as List) {
           var m = Map<String, dynamic>.from(row as Map);
+          // Books removed from the app: drop anything saved from them.
+          if (_isRemovedBook(t, m)) {
+            slimmed = true;
+            continue;
+          }
           // Deleted rows saved by older versions still hold their text.
           if (m['deleted'] == true && m.length > 3) {
             m = {'id': m['id'], 'deleted': true, 'updated_at': m['updated_at']};
@@ -85,6 +102,7 @@ class ContentStore extends ChangeNotifier {
   void applyRows(String table, List<Map<String, dynamic>> rows) {
     final store = _rows[table]!;
     for (final row in rows) {
+      if (_isRemovedBook(table, row)) continue;
       // A deleted row keeps only its id (so it stays hidden and can still
       // hide bundled text with the same id); its text is not kept on the
       // phone.
