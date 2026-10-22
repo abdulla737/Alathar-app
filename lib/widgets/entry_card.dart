@@ -65,9 +65,9 @@ class EntryCard extends StatelessWidget {
                   size: isAyah ? 24 : 21,
                   height: 1.8,
                   color: isAyah ? AppColors.brown : AppColors.ink)),
-          if (!S.isArabic && e.translation.isNotEmpty) ...[
+          if (!S.isArabic && e.localTranslation.isNotEmpty) ...[
             const SizedBox(height: 8),
-            Text(e.translation,
+            Text(e.localTranslation,
                 textDirection: TextDirection.ltr,
                 style: AppText.ui(size: 14, height: 1.5, color: AppColors.body)),
           ],

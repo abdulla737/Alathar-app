@@ -29,7 +29,8 @@ class LText {
 class Hadith {
   final int id; // stable id, used to save favorites
   final String arabic; // original text (always shown)
-  final String translation; // shown only when the app is not in Arabic
+  final String translation; // English; shown only when the app is not in Arabic
+  final String translationUr; // Urdu (HadeethEnc), when available
   final LText reference;
   final LText fullReference;
   final LText narrator;
@@ -48,7 +49,12 @@ class Hadith {
   final String quranRef; // verses to recite, e.g. "2:255" or "9:128-129" (ayah rows)
   final String audioUrl; // own recording, if any (takes priority)
 
+  /// The translation in the app language: Urdu when there is one, else English.
+  String get localTranslation =>
+      AppSettings.instance.language == 'ur' && translationUr.isNotEmpty ? translationUr : translation;
+
   const Hadith({
+    this.translationUr = '',
     this.quranRef = '',
     this.audioUrl = '',
     this.title = const LText(ar: '', en: ''),
@@ -78,14 +84,20 @@ class Dhikr {
   final int sort; // order inside the category
   final String arabic;
   final String transliteration; // hidden in Arabic; empty until translated
-  final String translation; // hidden in Arabic; empty until translated
+  final String translation; // English; hidden in Arabic; empty until translated
+  final String translationUr; // Urdu, when available
   final LText virtue;
   final LText source;
   final int count;
   final String quranRef; // Qur'an athkar, e.g. "2:255" or "112:1-4|113:1-5|114:1-6"
   final String audioUrl; // own recording, if any (takes priority)
 
+  /// The translation in the app language: Urdu when there is one, else English.
+  String get localTranslation =>
+      AppSettings.instance.language == 'ur' && translationUr.isNotEmpty ? translationUr : translation;
+
   const Dhikr({
+    this.translationUr = '',
     this.quranRef = '',
     this.audioUrl = '',
     this.id = 0,

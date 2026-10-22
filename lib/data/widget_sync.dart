@@ -83,7 +83,7 @@ class WidgetSync with WidgetsBindingObserver {
     bool hadithDone = false;
     try {
       final h = ContentStore.instance.hadithOfToday();
-      hadith = S.isArabic || h.translation.isEmpty ? h.arabic : h.translation;
+      hadith = S.isArabic || h.localTranslation.isEmpty ? h.arabic : h.localTranslation;
       hadith = hadith.replaceAll(RegExp(r'\s+'), ' ').trim();
       if (hadith.length > 160) hadith = '${hadith.substring(0, 160)}…';
       hadithDone = UserStore.instance.readToday(h.id);

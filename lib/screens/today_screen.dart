@@ -193,7 +193,7 @@ class _HadithOfTheDayCard extends StatelessWidget {
                           overflow: TextOverflow.ellipsis,
                           style: AppText.ui(
                               size: 14, weight: FontWeight.w700, color: AppColors.sand)),
-                    Text(S.isArabic ? hadith.arabic : hadith.translation,
+                    Text(S.isArabic || hadith.localTranslation.isEmpty ? hadith.arabic : hadith.localTranslation,
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                         textDirection: S.isArabic ? TextDirection.rtl : null,
@@ -285,9 +285,9 @@ class _FridayCard extends StatelessWidget {
               textAlign: TextAlign.right,
               style: AppText.arabic(
                   size: AppSettings.instance.arabicSize - 4, height: 1.8)),
-          if (!S.isArabic && h.translation.isNotEmpty) ...[
+          if (!S.isArabic && h.localTranslation.isNotEmpty) ...[
             const SizedBox(height: 6),
-            Text(h.translation,
+            Text(h.localTranslation,
                 maxLines: 3,
                 overflow: TextOverflow.ellipsis,
                 style: AppText.ui(size: 13, color: AppColors.body, height: 1.5)),

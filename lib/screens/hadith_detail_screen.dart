@@ -87,7 +87,7 @@ class HadithDetailScreen extends StatelessWidget {
                           height: 1.85)),
                   if (!S.isArabic) ...[
                     const SizedBox(height: 14),
-                    Text(h.translation, style: AppText.ui(size: 16 * k, height: 1.55)),
+                    Text(h.localTranslation, style: AppText.ui(size: 16 * k, height: 1.55)),
                   ],
                   if (h.grade.v.isNotEmpty) ...[
                     const SizedBox(height: 14),

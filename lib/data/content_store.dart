@@ -403,8 +403,8 @@ class ContentStore extends ChangeNotifier {
       sort: (r['sort'] as int?) ?? fb?.sort ?? 0,
       arabic: _s(r, 'arabic') ?? fb?.arabic ?? '',
       transliteration: _s(r, 'transliteration') ?? fb?.transliteration ?? '',
-      // TODO: show translation_ur in Urdu once Urdu translations are added.
       translation: _s(r, 'translation_en') ?? fb?.translation ?? '',
+      translationUr: _s(r, 'translation_ur') ?? fb?.translationUr ?? '',
       virtue: _lt(r, 'virtue', fb?.virtue),
       source: srcAr.isNotEmpty
           ? LText(ar: srcAr, en: srcEn.isNotEmpty ? srcEn : srcAr)
@@ -443,6 +443,7 @@ class ContentStore extends ChangeNotifier {
       audioUrl: _s(r, 'audio_url') ?? fb?.audioUrl ?? '',
       arabic: _s(r, 'arabic') ?? fb?.arabic ?? '',
       translation: _s(r, 'translation_en') ?? fb?.translation ?? '',
+      translationUr: _s(r, 'translation_ur') ?? fb?.translationUr ?? '',
       reference: _lt(r, 'reference', fb?.reference),
       fullReference: _lt(r, 'full_ref', fb?.fullReference),
       narrator: _lt(r, 'narrator', fb?.narrator),

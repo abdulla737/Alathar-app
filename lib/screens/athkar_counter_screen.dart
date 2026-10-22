@@ -240,9 +240,9 @@ class _AthkarCounterScreenState extends State<AthkarCounterScreen> {
                                   color: AppColors.muted,
                                   style: FontStyle.italic)),
                         ],
-                        if (!arabicUi && d.translation.isNotEmpty) ...[
+                        if (!arabicUi && d.localTranslation.isNotEmpty) ...[
                           const SizedBox(height: 10),
-                          Text(d.translation,
+                          Text(d.localTranslation,
                               textAlign: TextAlign.center,
                               textDirection: TextDirection.ltr,
                               style: AppText.ui(size: 16 * z, weight: FontWeight.w500)),
