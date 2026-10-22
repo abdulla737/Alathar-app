@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import '../data/app_settings.dart';
 import '../data/prayer_store.dart';
 import '../data/prayer_times.dart';
+import '../data/quran.dart' show arabicDigits;
 import '../data/weather.dart';
 import '../l10n/strings.dart';
 import '../screens/prayer_screen.dart';
@@ -130,6 +131,18 @@ class _PrayerCardState extends State<PrayerCard> {
                                 color: p == prayer ? AppColors.nightGold : AppColors.onNightMuted)),
                   ],
                 ),
+              ],
+              // Rain here: the dua; rain elsewhere in the UAE: where.
+              if (WeatherStore.instance.now?.kind == WeatherKind.rain) ...[
+                const SizedBox(height: 10),
+                _RainLine(icon: Icons.water_drop, text: context.tr('wx_rain_dua')),
+              ],
+              if (WeatherStore.instance.uaeRain.isNotEmpty) ...[
+                const SizedBox(height: 8),
+                _RainLine(
+                    icon: Icons.umbrella_outlined,
+                    text: context.tr('wx_uae_rain',
+                        {'places': uaeRainNames(WeatherStore.instance.uaeRain)})),
               ],
               const SizedBox(height: 8),
               Align(
@@ -268,6 +281,49 @@ class _WeatherChip extends StatelessWidget {
           const SizedBox(width: 4),
           Text('${context.tr(key)} · ${weather.temperature.round()}°',
               style: AppText.ui(size: 11, weight: FontWeight.w600, color: AppColors.onNightBody)),
+        ],
+      ),
+    );
+  }
+}
+
+/// «الفجيرة، حتا، مسافي +٢»: up to five names, then how many more.
+String uaeRainNames(List<UaeRainPlace> places) {
+  final sep = S.lang == 'en' ? ', ' : '، ';
+  const max = 5;
+  final names = places.take(max).map((p) => p.name.v).join(sep);
+  final more = places.length - max;
+  if (more <= 0) return names;
+  return '$names +${S.isArabic ? arabicDigits(more) : '$more'}';
+}
+
+/// One small line on the prayer card about rain.
+class _RainLine extends StatelessWidget {
+  final IconData icon;
+  final String text;
+  const _RainLine({required this.icon, required this.text});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.10),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.only(top: 2),
+            child: Icon(icon, size: 15, color: AppColors.nightGold),
+          ),
+          const SizedBox(width: 6),
+          Expanded(
+            child: Text(text,
+                style: AppText.ui(size: 12, height: 1.45, weight: FontWeight.w600,
+                    color: AppColors.onNightBody)),
+          ),
         ],
       ),
     );

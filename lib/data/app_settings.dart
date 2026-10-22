@@ -61,6 +61,9 @@ class AppSettings extends ChangeNotifier {
   String translation = 'English';
   bool onboardingDone = false;
 
+  /// The user's first name for the Today greeting («السلام عليكم عبدالله»).
+  String userName = '';
+
   final Map<String, bool> reminders = {
     'hadith': true,
     'morning': true,
@@ -84,6 +87,7 @@ class AppSettings extends ChangeNotifier {
   static const _kQuranTo = 'goal_quran_to';
   static const _kQuranKhatma = 'goal_quran_khatma';
   static const _kOnboarding = 'onboarding_done';
+  static const _kUserName = 'user_name';
   static String _kReminder(String key) => 'reminder_$key';
 
   /// Reads saved settings from the phone. Missing values keep their defaults.
@@ -104,6 +108,7 @@ class AppSettings extends ChangeNotifier {
     rangeFrom = (p.getInt(_kQuranFrom) ?? 1).clamp(1, 113);
     rangeTo = (p.getInt(_kQuranTo) ?? 114).clamp(rangeFrom + 1, 114);
     onboardingDone = p.getBool(_kOnboarding) ?? false;
+    userName = p.getString(_kUserName) ?? '';
     for (final key in reminders.keys.toList()) {
       reminders[key] = p.getBool(_kReminder(key)) ?? reminders[key]!;
     }
@@ -174,6 +179,14 @@ class AppSettings extends ChangeNotifier {
     rangeTo = to.clamp(rangeFrom + 1, 114);
     _prefs?.setInt(_kQuranFrom, rangeFrom);
     _prefs?.setInt(_kQuranTo, rangeTo);
+    notifyListeners();
+  }
+
+  void setUserName(String value) {
+    final v = value.trim().replaceAll(RegExp(r'\s+'), ' ');
+    if (v == userName) return;
+    userName = v.length > 30 ? v.substring(0, 30) : v;
+    _prefs?.setString(_kUserName, userName);
     notifyListeners();
   }
 
