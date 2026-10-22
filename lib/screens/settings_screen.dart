@@ -382,6 +382,12 @@ class _QuranRangeRows extends StatelessWidget {
     );
   }
 
+  /// Starts the daily reading afresh at the plan's first page.
+  static void _restartWird() {
+    final first = QuranData.instance.pageOf(AppSettings.instance.quranFromSurah, 1);
+    QuranStore.instance.resetWird(first);
+  }
+
   /// «ختمة» / «سور محددة»: confirm, then start the daily reading afresh
   /// with that plan (the Today card «ورد التلاوة اليومية» starts at zero).
   Future<void> _confirmPlan(BuildContext context, {required bool khatma}) async {
@@ -407,7 +413,7 @@ class _QuranRangeRows extends StatelessWidget {
     );
     if (ok != true) return;
     AppSettings.instance.setQuranKhatma(khatma);
-    QuranStore.instance.resetWird();
+    _restartWird();
   }
 
   Widget _rows(BuildContext context, AppSettings settings, QuranData q) {
@@ -493,13 +499,13 @@ class _QuranRangeRows extends StatelessWidget {
               q.surahs.where((s) => s.number < 114),
               (v) {
                 settings.setQuranRange(v, v >= settings.rangeTo ? v + 1 : settings.rangeTo);
-                QuranStore.instance.resetWird();
+                _restartWird();
               }),
           picker(context.tr('wird_to_surah'), settings.rangeTo,
               q.surahs.where((s) => s.number > settings.rangeFrom),
               (v) {
                 settings.setQuranRange(settings.rangeFrom, v);
-                QuranStore.instance.resetWird();
+                _restartWird();
               }),
         ],
         Padding(

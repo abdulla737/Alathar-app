@@ -40,12 +40,14 @@ class QuranWirdCard extends StatelessWidget {
     // ended) for the daily number of pages, inside the chosen surahs.
     final fromPage = q.pageOf(fromSurah, 1);
     final toPage = q.pageOf(toSurah, lastOfRange.count);
-    final last = store.lastSurah;
     var fallback = fromPage;
-    if (last != null) {
-      final la = store.lastAyah.clamp(1, q.surah(last).count);
-      fallback = q.pageOf(last, la);
+    if (store.lastSurah != null) {
+      final ls = store.lastSurah!;
+      fallback = q.pageOf(ls, store.lastAyah.clamp(1, q.surah(ls).count));
     }
+    // The verse where you stopped shows only once today's reading is open
+    // (a new plan from Settings starts at its first page).
+    final last = store.wirdBegunToday ? store.lastSurah : null;
     final startPage = store.wirdStartPage(fallback, fromPage, toPage);
     final endPage = (startPage + settings.quranPagesPerDay - 1).clamp(startPage, toPage);
 

@@ -377,6 +377,9 @@ class QuranStore extends ChangeNotifier {
     return inRange(_wirdNext) ?? fallback.clamp(from, to);
   }
 
+  /// Today's reading has been opened (since the last plan change).
+  bool get wirdBegunToday => _wirdDay == _day(DateTime.now());
+
   /// Fixes today's first page when today's reading is opened.
   void beginWird(int page) {
     final today = _day(DateTime.now());
@@ -435,16 +438,18 @@ class QuranStore extends ChangeNotifier {
   /// A new daily-reading plan (Settings → «الورد اليومي»): today's pages,
   /// where tomorrow starts and the khatma / range progress start from zero.
   /// Completed khatmas are kept.
-  void resetWird() {
+  /// [startPage]: the plan's first page — today's reading starts there
+  /// (not at the last place read in the mushaf).
+  void resetWird(int startPage) {
     _wirdDay = '';
     _wirdStart = null;
-    _wirdNext = null;
+    _wirdNext = startPage;
     _cycleKey = '';
     _furthest = 0;
     _completedDay = '';
     _pagesToday.clear();
     _pagesDay = '';
-    _prefs?.remove(_kWird);
+    _saveWird();
     _prefs?.remove(_kPagesToday);
     _saveCycle();
     notifyListeners();
