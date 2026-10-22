@@ -43,6 +43,13 @@ class _QuranScreenState extends State<QuranScreen> {
     ));
   }
 
+  /// Opens a surah where its reading was saved («هل تود متابعة القراءة؟»),
+  /// or at its start.
+  void _openSurah(int surah) {
+    final mark = QuranStore.instance.surahMark(surah);
+    _open(surah, mark == null ? 1 : QuranData.instance.firstAyahOnPage(surah, mark));
+  }
+
   /// Surahs matching the search: Arabic name (without tashkeel, any alef
   /// form), English name, or number (also in Arabic digits).
   List<Surah> _filtered(List<Surah> all) {
@@ -73,7 +80,7 @@ class _QuranScreenState extends State<QuranScreen> {
     return [
       if (surahs.isNotEmpty) ...[
         heading(context.tr('quran_surahs')),
-        for (final s in surahs.take(6)) _SurahRow(surah: s, onTap: () => _open(s.number)),
+        for (final s in surahs.take(6)) _SurahRow(surah: s, onTap: () => _openSurah(s.number)),
         const SizedBox(height: 6),
       ],
       if (!QuranSearch.ready)
@@ -214,7 +221,7 @@ class _QuranScreenState extends State<QuranScreen> {
         else if (searching)
           ..._searchResults(context, surahs)
         else
-          for (final s in surahs) _SurahRow(surah: s, onTap: () => _open(s.number)),
+          for (final s in surahs) _SurahRow(surah: s, onTap: () => _openSurah(s.number)),
         const SizedBox(height: 8),
         Text(context.tr('quran_credit'),
             textAlign: TextAlign.center,
@@ -359,6 +366,9 @@ class _SurahRow extends StatelessWidget {
       context.tr(surah.medinan ? 'quran_medinan' : 'quran_meccan'),
       context.tr('quran_ayat', {'n': localNum(surah.count)}),
     ].join(' · ');
+    final (first, last) = QuranData.instance.surahPages(surah.number);
+    final saved = QuranStore.instance.surahMark(surah.number);
+    final mark = saved != null && saved >= first && saved <= last ? saved : null;
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
       child: AppCard(
@@ -378,6 +388,26 @@ class _SurahRow extends StatelessWidget {
                       overflow: TextOverflow.ellipsis,
                       style: AppText.ui(size: 15, weight: FontWeight.w700)),
                   Text(meta, style: AppText.ui(size: 12, color: AppColors.muted)),
+                  // Saved place from free reading: «الصفحة ٣ من ٥» and a bar.
+                  if (mark != null) ...[
+                    const SizedBox(height: 6),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: ProgressLine(
+                              value: (mark - first + 1) / (last - first + 1), height: 5),
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                            context.tr('quran_surah_progress', {
+                              'p': localNum(mark - first + 1),
+                              't': localNum(last - first + 1),
+                            }),
+                            style: AppText.ui(
+                                size: 11, weight: FontWeight.w600, color: AppColors.green)),
+                      ],
+                    ),
+                  ],
                 ],
               ),
             ),

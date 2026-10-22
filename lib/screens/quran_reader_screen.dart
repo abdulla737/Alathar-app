@@ -296,6 +296,52 @@ class _QuranReaderScreenState extends State<QuranReaderScreen> {
     _checkWirdEnd(_page);
   }
 
+  /// Free reading only: leaving asks «هل تود متابعة القراءة؟» when the
+  /// reader is past the surah's first page, or away from its saved page.
+  bool _shouldAskToSave() {
+    if (_wird) return false;
+    final s = _titleSurah(_page);
+    final (first, _) = _q.surahPages(s);
+    final mark = QuranStore.instance.surahMark(s);
+    if (mark == _page) return false;
+    return _page != first || mark != null;
+  }
+
+  Future<void> _askToSave() async {
+    final s = _q.surah(_titleSurah(_page));
+    final (first, last) = _q.surahPages(s.number);
+    final page = _page;
+    final save = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(ctx.tr('quran_resume_q'),
+            style: AppText.ui(size: 17, weight: FontWeight.w700)),
+        content: Text(
+            ctx.tr('quran_resume_body', {
+              's': S.isArabic ? 'سورة ${s.name}' : s.translit,
+              'p': localNum(page - first + 1),
+              't': localNum(last - first + 1),
+            }),
+            style: AppText.ui(size: 14, height: 1.6)),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: Text(ctx.tr('quran_resume_no'),
+                style: AppText.ui(size: 14, color: AppColors.muted)),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: Text(ctx.tr('quran_resume_yes'),
+                style: AppText.ui(size: 14, weight: FontWeight.w700, color: AppColors.green)),
+          ),
+        ],
+      ),
+    );
+    if (save == null || !mounted) return; // dismissed: keep reading
+    if (save) QuranStore.instance.setSurahMark(s.number, page);
+    Navigator.of(context).pop();
+  }
+
   TapGestureRecognizer _tap(int s, int a) =>
       _taps[_q.indexOf(s, a)] ??= TapGestureRecognizer()..onTap = () => _onAyahTap(s, a);
 
@@ -326,7 +372,13 @@ class _QuranReaderScreenState extends State<QuranReaderScreen> {
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
             style: AppText.ui(size: 16, weight: FontWeight.w700));
-        return Scaffold(
+        final ask = _shouldAskToSave();
+        return PopScope(
+          canPop: !ask,
+          onPopInvokedWithResult: (didPop, _) {
+            if (!didPop) _askToSave();
+          },
+          child: Scaffold(
           backgroundColor: AppColors.ground,
           appBar: AppBar(
             backgroundColor: AppColors.ground,
@@ -372,6 +424,7 @@ class _QuranReaderScreenState extends State<QuranReaderScreen> {
                   ? _WirdDone(nextPage: _lastPage + 1 > _q.pageCount ? 1 : _lastPage + 1)
                   : _buildPage(_firstPage + i, size, OrnamentPalette.of(store.ornament)),
             ),
+          ),
           ),
         );
       },

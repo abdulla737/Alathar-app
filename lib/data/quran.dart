@@ -86,6 +86,20 @@ class QuranData {
 
   int pageOf(int surah, int ayah) => _pages[indexOf(surah, ayah)];
 
+  /// First and last mushaf page of a surah.
+  (int, int) surahPages(int surah) {
+    final s = surahs[surah - 1];
+    return (pageOf(surah, 1), pageOf(surah, s.count));
+  }
+
+  /// The first verse of [surah] on [page] (1 when the surah isn't on it).
+  int firstAyahOnPage(int surah, int page) {
+    for (final v in ayatOnPage(page)) {
+      if (v.$1 == surah) return v.$2;
+    }
+    return 1;
+  }
+
   // ---------------------------------------------------------------- Pages
   List<int> _pageFirst = const []; // first verse (overall index) of each page
 
@@ -167,6 +181,10 @@ class QuranStore extends ChangeNotifier {
   int lastAyah = 1;
   final Set<String> bookmarks = {}; // "surah:ayah"
 
+  /// Free reading: the page saved per surah («هل تود متابعة القراءة؟» → نعم).
+  /// Shown as a bar on the surah's row; opening the surah resumes there.
+  final Map<int, int> _surahMarks = {};
+
   /// Colour the text by tajweed rules (switch on the reading page).
   bool tajweed = true;
 
@@ -204,6 +222,7 @@ class QuranStore extends ChangeNotifier {
   static const _kPagesToday = 'quran_pages_today'; // "YYYY-MM-DD:1,2"
   static const _kWird = 'quran_wird'; // "YYYY-MM-DD|start|next"
   static const _kCycle = 'quran_cycle'; // "from-to|furthest|done|day"
+  static const _kSurahMarks = 'quran_surah_marks'; // "surah:page,…"
 
   Future<void> load() async {
     final p = _prefs = await SharedPreferences.getInstance();
@@ -228,6 +247,13 @@ class QuranStore extends ChangeNotifier {
       khatmasDone = int.tryParse(c[2]) ?? 0;
       if (c.length >= 4) _completedDay = c[3];
     }
+    _surahMarks.clear();
+    for (final e in (p.getString(_kSurahMarks) ?? '').split(',')) {
+      final kv = e.split(':');
+      if (kv.length != 2) continue;
+      final s = int.tryParse(kv[0]), pg = int.tryParse(kv[1]);
+      if (s != null && pg != null) _surahMarks[s] = pg;
+    }
     final pt = p.getString(_kPagesToday) ?? '';
     final colon = pt.indexOf(':');
     if (colon > 0) {
@@ -242,6 +268,25 @@ class QuranStore extends ChangeNotifier {
     lastAyah = ayah;
     _prefs?.setInt(_kSurah, surah);
     _prefs?.setInt(_kAyah, ayah);
+    notifyListeners();
+  }
+
+  /// Saved page in [surah] from free reading (null = none).
+  int? surahMark(int surah) => _surahMarks[surah];
+
+  void setSurahMark(int surah, int page) {
+    if (_surahMarks[surah] == page) return;
+    _surahMarks[surah] = page;
+    _saveSurahMarks();
+  }
+
+  void clearSurahMark(int surah) {
+    if (_surahMarks.remove(surah) != null) _saveSurahMarks();
+  }
+
+  void _saveSurahMarks() {
+    _prefs?.setString(_kSurahMarks,
+        _surahMarks.entries.map((e) => '${e.key}:${e.value}').join(','));
     notifyListeners();
   }
 
