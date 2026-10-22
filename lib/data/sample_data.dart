@@ -19,7 +19,9 @@ class LText {
       case 'ar':
         return ar;
       case 'ur':
-        return ur ?? en;
+        // No Urdu yet: the Arabic (same script) rather than English.
+        final u = ur;
+        return (u == null || u.isEmpty) ? (ar.isNotEmpty ? ar : en) : u;
       default:
         return en;
     }
@@ -49,9 +51,10 @@ class Hadith {
   final String quranRef; // verses to recite, e.g. "2:255" or "9:128-129" (ayah rows)
   final String audioUrl; // own recording, if any (takes priority)
 
-  /// The translation in the app language: Urdu when there is one, else English.
+  /// The translation in the app language (Urdu only in Urdu: no English
+  /// fallback — the Arabic text is always shown).
   String get localTranslation =>
-      AppSettings.instance.language == 'ur' && translationUr.isNotEmpty ? translationUr : translation;
+      AppSettings.instance.language == 'ur' ? translationUr : translation;
 
   const Hadith({
     this.translationUr = '',
@@ -92,9 +95,10 @@ class Dhikr {
   final String quranRef; // Qur'an athkar, e.g. "2:255" or "112:1-4|113:1-5|114:1-6"
   final String audioUrl; // own recording, if any (takes priority)
 
-  /// The translation in the app language: Urdu when there is one, else English.
+  /// The translation in the app language (Urdu only in Urdu: no English
+  /// fallback — the Arabic text is always shown).
   String get localTranslation =>
-      AppSettings.instance.language == 'ur' && translationUr.isNotEmpty ? translationUr : translation;
+      AppSettings.instance.language == 'ur' ? translationUr : translation;
 
   const Dhikr({
     this.translationUr = '',

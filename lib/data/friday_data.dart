@@ -20,6 +20,8 @@ const _attribution = LText(
 const fridayHadith = <Hadith>[
   Hadith(
     id: 90001,
+    translationUr:
+        'سب سے بہتر دن جس پر سورج طلوع ہوا، جمعہ کا دن ہے۔ اسی دن آدم علیہ السلام پیدا کیے گئے، اسی دن جنت میں داخل کیے گئے، اسی دن وہاں سے نکالے گئے، اور قیامت بھی جمعہ ہی کے دن قائم ہوگی۔',
     collectionId: 9,
     numberInBook: 1,
     dailyOk: false,
@@ -43,6 +45,8 @@ const fridayHadith = <Hadith>[
   ),
   Hadith(
     id: 90002,
+    translationUr:
+        'تمہارے دنوں میں سب سے افضل دن جمعہ کا دن ہے۔ اسی دن آدم علیہ السلام پیدا کیے گئے اور اسی دن ان کی روح قبض کی گئی، اسی دن صور پھونکا جائے گا اور اسی دن سب بے ہوش ہوں گے۔ لہٰذا اس دن مجھ پر کثرت سے درود بھیجا کرو، کیونکہ تمہارا درود مجھ پر پیش کیا جاتا ہے۔',
     collectionId: 9,
     numberInBook: 2,
     dailyOk: false,
@@ -72,6 +76,8 @@ const fridayHadith = <Hadith>[
   ),
   Hadith(
     id: 90003,
+    translationUr:
+        'جس نے جمعہ کے دن سورۂ کہف پڑھی، اس کے لیے دو جمعوں کے درمیان نور روشن کر دیا جاتا ہے۔',
     collectionId: 9,
     numberInBook: 3,
     dailyOk: false,
@@ -98,6 +104,8 @@ const fridayHadith = <Hadith>[
   ),
   Hadith(
     id: 90004,
+    translationUr:
+        'جب تم میں سے کوئی جمعہ کے لیے آئے تو اسے غسل کر لینا چاہیے۔',
     collectionId: 9,
     numberInBook: 4,
     dailyOk: false,
@@ -122,6 +130,8 @@ const fridayHadith = <Hadith>[
   ),
   Hadith(
     id: 90005,
+    translationUr:
+        'جمعہ کے دن کا غسل ہر بالغ پر واجب ہے، اور یہ کہ وہ مسواک کرے اور اگر میسر ہو تو خوشبو لگائے۔',
     collectionId: 9,
     numberInBook: 5,
     dailyOk: false,
@@ -148,6 +158,8 @@ const fridayHadith = <Hadith>[
   ),
   Hadith(
     id: 90006,
+    translationUr:
+        'جس نے جمعہ کے دن غسلِ جنابت کی طرح غسل کیا، پھر (مسجد) گیا تو گویا اس نے اونٹ کی قربانی کی؛ جو دوسری گھڑی میں گیا گویا اس نے گائے کی قربانی کی؛ جو تیسری گھڑی میں گیا گویا اس نے سینگوں والا مینڈھا قربان کیا؛ جو چوتھی گھڑی میں گیا گویا اس نے مرغی قربان کی؛ اور جو پانچویں گھڑی میں گیا گویا اس نے انڈا قربان کیا۔ پھر جب امام (خطبہ کے لیے) نکل آتا ہے تو فرشتے ذکر سننے کے لیے حاضر ہو جاتے ہیں۔',
     collectionId: 9,
     numberInBook: 6,
     dailyOk: false,
@@ -174,6 +186,8 @@ const fridayHadith = <Hadith>[
   ),
   Hadith(
     id: 90007,
+    translationUr:
+        'جو آدمی جمعہ کے دن غسل کرے، جہاں تک ہو سکے پاکیزگی حاصل کرے، اپنا تیل لگائے یا اپنے گھر کی خوشبو استعمال کرے، پھر (مسجد) جائے اور دو آدمیوں کے درمیان جدائی نہ ڈالے، پھر جتنی نماز اس کے مقدر میں ہو پڑھے، پھر جب امام خطبہ دے تو خاموش رہے، تو اس جمعہ سے اگلے جمعہ تک کے اس کے گناہ معاف کر دیے جاتے ہیں۔',
     collectionId: 9,
     numberInBook: 7,
     dailyOk: false,
@@ -197,6 +211,8 @@ const fridayHadith = <Hadith>[
   ),
   Hadith(
     id: 90008,
+    translationUr:
+        'جب امام خطبہ دے رہا ہو اور تم جمعہ کے دن اپنے ساتھی سے کہو: ”خاموش رہو“، تو تم نے لغو کام کیا۔',
     collectionId: 9,
     numberInBook: 8,
     dailyOk: false,
@@ -222,6 +238,8 @@ const fridayHadith = <Hadith>[
   ),
   Hadith(
     id: 90009,
+    translationUr:
+        'اس (جمعہ کے دن) میں ایک ایسی گھڑی ہے کہ جو مسلمان بندہ اسے اس حال میں پا لے کہ وہ کھڑا نماز پڑھ رہا ہو اور اللہ تعالیٰ سے کچھ مانگے، تو اللہ اسے وہ ضرور عطا فرماتا ہے۔',
     collectionId: 9,
     numberInBook: 9,
     dailyOk: false,
@@ -248,6 +266,8 @@ const fridayHadith = <Hadith>[
   ),
   Hadith(
     id: 90010,
+    translationUr:
+        'جمعہ کا دن بارہ گھڑیوں کا ہے، اس میں ایک ایسی گھڑی ہے کہ جو مسلمان بندہ اس میں اللہ سے کچھ مانگے، اللہ اسے ضرور عطا فرماتا ہے؛ لہٰذا اسے عصر کے بعد آخری گھڑی میں تلاش کرو۔',
     collectionId: 9,
     numberInBook: 10,
     dailyOk: false,
