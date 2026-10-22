@@ -2,6 +2,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 
+import '../l10n/strings.dart';
 import '../theme/app_theme.dart';
 
 /// Eight-pointed star (two overlapping squares), used as the app motif
@@ -74,6 +75,7 @@ class AppCard extends StatelessWidget {
   final EdgeInsetsGeometry padding;
   final double radius;
   final VoidCallback? onTap;
+  final VoidCallback? onLongPress;
   final Color color;
   final Color borderColor;
   final double borderWidth;
@@ -84,6 +86,7 @@ class AppCard extends StatelessWidget {
     this.padding = const EdgeInsets.all(16),
     this.radius = 20,
     this.onTap,
+    this.onLongPress,
     this.color = AppColors.surface,
     this.borderColor = AppColors.line,
     this.borderWidth = 1,
@@ -103,6 +106,7 @@ class AppCard extends StatelessWidget {
       clipBehavior: Clip.antiAlias,
       child: InkWell(
         onTap: onTap,
+        onLongPress: onLongPress,
         child: Padding(padding: padding, child: child),
       ),
     );
@@ -208,4 +212,32 @@ class IconTile extends StatelessWidget {
       child: child,
     );
   }
+}
+
+/// «إعادة تعيين علامة القراءة؟» for [name]; true when confirmed. Shows
+/// «تمت إعادة التعيين» after [onReset] runs.
+Future<void> confirmResetReading(BuildContext context, String name, VoidCallback onReset) async {
+  final ok = await showDialog<bool>(
+    context: context,
+    builder: (ctx) => AlertDialog(
+      title: Text(ctx.tr('reset_mark_q'), style: AppText.ui(size: 17, weight: FontWeight.w700)),
+      content: Text(ctx.tr('reset_mark_body', {'name': name}),
+          style: AppText.ui(size: 14, height: 1.6)),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(ctx).pop(false),
+          child: Text(ctx.tr('book_cancel'), style: AppText.ui(size: 14, color: AppColors.muted)),
+        ),
+        TextButton(
+          onPressed: () => Navigator.of(ctx).pop(true),
+          child: Text(ctx.tr('reset_btn'),
+              style: AppText.ui(size: 14, weight: FontWeight.w700, color: AppColors.green)),
+        ),
+      ],
+    ),
+  );
+  if (ok != true || !context.mounted) return;
+  onReset();
+  ScaffoldMessenger.of(context)
+      .showSnackBar(SnackBar(content: Text(context.tr('reset_done'))));
 }

@@ -164,8 +164,13 @@ class _StoryRow extends StatelessWidget {
             : context.tr('stories_parts', {'n': localNum(story.parts.length)}))
         : '$surahName ${localNum(p.from)}–${localNum(p.to)} · ${context.tr('quran_ayat', {'n': localNum(p.count)})}';
 
+    final units = store.unitsOf(story);
     return InkWell(
       onTap: () => openStory(context, story),
+      // Long press: reset this story's reading (✓ and progress).
+      onLongPress: store.hasReading(units)
+          ? () => confirmResetReading(context, story.name.v, () => store.reset(units))
+          : null,
       child: Container(
         constraints: const BoxConstraints(minHeight: 56),
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),

@@ -70,6 +70,20 @@ class StoryStore extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Clears the reading of [units]: ✓ and progress.
+  void reset(Iterable<StoryUnit> units) {
+    for (final u in units) {
+      _done.remove(u.key);
+      _progress.remove(u.key);
+    }
+    _prefs?.setStringList(_kDone, _done.toList());
+    _prefs?.setString(_kProgress, jsonEncode(_progress));
+    notifyListeners();
+  }
+
+  bool hasReading(Iterable<StoryUnit> units) =>
+      units.any((u) => isDone(u) || (_progress[u.key] ?? 0) > 0.02);
+
   // ---------------------------------------------------------------- Stories
   List<StoryUnit> unitsOf(QuranStory s) =>
       [for (var i = 0; i < s.parts.length; i++) StoryUnit(s, i)];

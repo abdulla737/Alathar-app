@@ -106,10 +106,6 @@ class TodayScreen extends StatelessWidget {
           const TimeNowCard(),
           const SizedBox(height: 16),
 
-          // «قصص قرآنية · قصة اليوم».
-          const StoryCard(),
-          const SizedBox(height: 16),
-
           // «ورد التلاوة اليومية» first, then «ورد الحديث اليومي».
           const QuranWirdCard(),
           const SizedBox(height: 16),
@@ -121,6 +117,9 @@ class TodayScreen extends StatelessWidget {
               builder: (_) => HadithDetailScreen(hadith: h),
             )),
           ),
+          const SizedBox(height: 16),
+          // «قصص قرآنية · قصة اليوم» — last on the page.
+          const StoryCard(),
           const SizedBox(height: 16),
 
 

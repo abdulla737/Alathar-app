@@ -304,6 +304,18 @@ class QuranStore extends ChangeNotifier {
     _saveSurahMarks();
   }
 
+  /// Clears a surah's reading: its saved page and the pages read in it (so
+  /// its bar and ✓ go). Pages it shares with a neighbouring surah count
+  /// for that one too.
+  void resetSurah(int surah, int firstPage, int lastPage) {
+    _surahMarks.remove(surah);
+    for (var p = firstPage; p <= lastPage; p++) {
+      _pagesSeen.remove(p);
+    }
+    _prefs?.setString(_kPagesSeen, _pagesSeen.join(','));
+    _saveSurahMarks();
+  }
+
   void clearSurahMark(int surah) {
     if (_surahMarks.remove(surah) != null) _saveSurahMarks();
   }

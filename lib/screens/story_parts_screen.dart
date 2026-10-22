@@ -138,6 +138,11 @@ class _PartRow extends StatelessWidget {
     return InkWell(
       onTap: () => Navigator.of(context)
           .push(MaterialPageRoute(builder: (_) => StoryScreen(unit: unit))),
+      // Long press: reset this part's reading.
+      onLongPress: store.hasReading([unit])
+          ? () => confirmResetReading(
+              context, '${unit.story.name.v} · ${p.name?.v ?? ''}', () => store.reset([unit]))
+          : null,
       child: Container(
         constraints: const BoxConstraints(minHeight: 56),
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),

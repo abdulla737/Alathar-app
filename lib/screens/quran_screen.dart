@@ -222,6 +222,19 @@ class _QuranScreenState extends State<QuranScreen> {
             selected: _tab,
             onChanged: (i) => setState(() => _tab = i),
           ),
+          if (_tab != 1) ...[
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                const Icon(Icons.touch_app_outlined, size: 14, color: AppColors.muted),
+                const SizedBox(width: 4),
+                Expanded(
+                  child: Text(context.tr(stories ? 'stories_reset_hint' : 'quran_reset_hint'),
+                      style: AppText.ui(size: 11, color: AppColors.muted)),
+                ),
+              ],
+            ),
+          ],
           const SizedBox(height: 12),
         ],
 
@@ -381,12 +394,18 @@ class _SurahRow extends StatelessWidget {
     final total = last - first + 1;
     // Every page of the surah has been read.
     final complete = QuranStore.instance.pagesSeenIn(first, last) == total;
+    final hasReading = complete || saved != null || QuranStore.instance.pagesSeenIn(first, last) > 0;
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
       child: AppCard(
         radius: 16,
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
         onTap: onTap,
+        // Long press: reset this surah's reading mark (bar and ✓).
+        onLongPress: hasReading
+            ? () => confirmResetReading(context, S.isArabic ? 'سورة ${surah.name}' : surah.translit,
+                () => QuranStore.instance.resetSurah(surah.number, first, last))
+            : null,
         child: Row(
           children: [
             complete
