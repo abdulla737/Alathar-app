@@ -197,13 +197,16 @@ class _QuranReaderScreenState extends State<QuranReaderScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       QuranStore.instance.setPosition(widget.surah, _openAyah);
+      QuranStore.instance.markPageSeen(_page);
       _countPage(_page);
       _checkWirdEnd(_page);
     });
     _loadTajweed();
     // Highlight the verse that was opened (juz / bookmark / search) and
     // bring it into view. From a search it stays highlighted.
-    if (_openAyah > 1 || widget.focus) {
+    // Opening a surah at its start also brings its title into view (a
+    // surah often begins halfway down a page).
+    if (_openAyah > 1 || widget.focus || !_wird) {
       final index = _q.indexOf(widget.surah, _openAyah);
       _selected = index;
       _focusIndex = index;
@@ -292,6 +295,7 @@ class _QuranReaderScreenState extends State<QuranReaderScreen> {
     });
     final (s, a) = _q.ayatOnPage(_page).first;
     QuranStore.instance.setPosition(s, a);
+    QuranStore.instance.markPageSeen(_page);
     _countPage(_page);
     _checkWirdEnd(_page);
   }
@@ -454,13 +458,16 @@ class _QuranReaderScreenState extends State<QuranReaderScreen> {
 
     for (final (s, a) in ayat) {
       final surah = _q.surah(s);
+      final index = _q.indexOf(s, a);
       if (a == 1) {
         flush();
-        body.add(Padding(
+        final banner = Padding(
           padding: EdgeInsets.only(top: body.isEmpty ? 0 : 10, bottom: 4),
           child: SurahBanner(
               title: 'سُورَةُ ${surah.name}', palette: palette, fontSize: size * 0.8),
-        ));
+        );
+        // A surah opened at its start: scroll to its title, not its first verse.
+        body.add(index == _focusIndex ? KeyedSubtree(key: _focusKey, child: banner) : banner);
         if (surah.showsBasmala) {
           body.add(Text(_q.basmala,
               textAlign: TextAlign.center,
@@ -468,9 +475,8 @@ class _QuranReaderScreenState extends State<QuranReaderScreen> {
               style: quranStyle(size * 0.92, color: palette.text, height: 1.9)));
         }
       }
-      final index = _q.indexOf(s, a);
       final highlight = _selected == index ? AppColors.greenSoft : null;
-      if (index == _focusIndex) {
+      if (index == _focusIndex && a != 1) {
         // Invisible marker where the verse starts (for scrolling to it).
         spans.add(WidgetSpan(child: SizedBox(key: _focusKey, width: 0, height: 0)));
       }

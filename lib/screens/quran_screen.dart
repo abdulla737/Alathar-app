@@ -369,6 +369,9 @@ class _SurahRow extends StatelessWidget {
     final (first, last) = QuranData.instance.surahPages(surah.number);
     final saved = QuranStore.instance.surahMark(surah.number);
     final mark = saved != null && saved >= first && saved <= last ? saved : null;
+    final total = last - first + 1;
+    // Every page of the surah has been read.
+    final complete = QuranStore.instance.pagesSeenIn(first, last) == total;
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
       child: AppCard(
@@ -377,7 +380,15 @@ class _SurahRow extends StatelessWidget {
         onTap: onTap,
         child: Row(
           children: [
-            _NumberBadge(localNum(surah.number)),
+            complete
+                ? Container(
+                    width: 38,
+                    height: 38,
+                    decoration: const BoxDecoration(
+                        color: AppColors.green, shape: BoxShape.circle),
+                    child: const Icon(Icons.check_rounded, color: Colors.white, size: 22),
+                  )
+                : _NumberBadge(localNum(surah.number)),
             const SizedBox(width: 12),
             Expanded(
               child: Column(
@@ -388,21 +399,24 @@ class _SurahRow extends StatelessWidget {
                       overflow: TextOverflow.ellipsis,
                       style: AppText.ui(size: 15, weight: FontWeight.w700)),
                   Text(meta, style: AppText.ui(size: 12, color: AppColors.muted)),
-                  // Saved place from free reading: «الصفحة ٣ من ٥» and a bar.
-                  if (mark != null) ...[
+                  // Read completely: a full bar and «مكتملة»; else the saved
+                  // place from free reading: «الصفحة ٣ من ٥» and a bar.
+                  if (complete || mark != null) ...[
                     const SizedBox(height: 6),
                     Row(
                       children: [
                         Expanded(
                           child: ProgressLine(
-                              value: (mark - first + 1) / (last - first + 1), height: 5),
+                              value: complete ? 1 : (mark! - first + 1) / total, height: 5),
                         ),
                         const SizedBox(width: 8),
                         Text(
-                            context.tr('quran_surah_progress', {
-                              'p': localNum(mark - first + 1),
-                              't': localNum(last - first + 1),
-                            }),
+                            complete
+                                ? context.tr('quran_surah_complete')
+                                : context.tr('quran_surah_progress', {
+                                    'p': localNum(mark! - first + 1),
+                                    't': localNum(total),
+                                  }),
                             style: AppText.ui(
                                 size: 11, weight: FontWeight.w600, color: AppColors.green)),
                       ],

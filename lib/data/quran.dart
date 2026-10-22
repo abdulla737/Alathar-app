@@ -185,6 +185,10 @@ class QuranStore extends ChangeNotifier {
   /// Shown as a bar on the surah's row; opening the surah resumes there.
   final Map<int, int> _surahMarks = {};
 
+  /// Every mushaf page ever shown in the reader; a surah is complete («✓»)
+  /// once all of its pages are in here.
+  final Set<int> _pagesSeen = {};
+
   /// Colour the text by tajweed rules (switch on the reading page).
   bool tajweed = true;
 
@@ -223,6 +227,7 @@ class QuranStore extends ChangeNotifier {
   static const _kWird = 'quran_wird'; // "YYYY-MM-DD|start|next"
   static const _kCycle = 'quran_cycle'; // "from-to|furthest|done|day"
   static const _kSurahMarks = 'quran_surah_marks'; // "surah:page,…"
+  static const _kPagesSeen = 'quran_pages_seen'; // "1,2,3,…"
 
   Future<void> load() async {
     final p = _prefs = await SharedPreferences.getInstance();
@@ -247,6 +252,9 @@ class QuranStore extends ChangeNotifier {
       khatmasDone = int.tryParse(c[2]) ?? 0;
       if (c.length >= 4) _completedDay = c[3];
     }
+    _pagesSeen
+      ..clear()
+      ..addAll((p.getString(_kPagesSeen) ?? '').split(',').map(int.tryParse).whereType<int>());
     _surahMarks.clear();
     for (final e in (p.getString(_kSurahMarks) ?? '').split(',')) {
       final kv = e.split(':');
@@ -269,6 +277,22 @@ class QuranStore extends ChangeNotifier {
     _prefs?.setInt(_kSurah, surah);
     _prefs?.setInt(_kAyah, ayah);
     notifyListeners();
+  }
+
+  /// A page was shown in the reader.
+  void markPageSeen(int page) {
+    if (!_pagesSeen.add(page)) return;
+    _prefs?.setString(_kPagesSeen, _pagesSeen.join(','));
+    notifyListeners();
+  }
+
+  /// Pages of [first]..[last] that have been read.
+  int pagesSeenIn(int first, int last) {
+    var n = 0;
+    for (var p = first; p <= last; p++) {
+      if (_pagesSeen.contains(p)) n++;
+    }
+    return n;
   }
 
   /// Saved page in [surah] from free reading (null = none).
