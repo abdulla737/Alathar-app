@@ -39,6 +39,15 @@ jobs:
           cp -r build/web/. website/dist/
           cp website/public/support.html website/public/privacy.html website/public/404.html website/dist/
           cp -r website/public/site website/dist/site
+      - name: Check the Firebase key
+        env:
+          SA: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_ALATHAR_14555 }}
+        run: |
+          if [ -z "$SA" ]; then
+            echo "::error::Secret FIREBASE_SERVICE_ACCOUNT_ALATHAR_14555 is missing or empty"; exit 1
+          fi
+          echo "$SA" | python3 -c "import json,sys; k=json.load(sys.stdin); print('::notice::Firebase key OK: project', k.get('project_id'), '·', k.get('client_email'))" \
+            || { echo "::error::The secret is not a valid service-account JSON (paste the whole .json file)"; exit 1; }
       - uses: FirebaseExtended/action-hosting-deploy@v0
         with:
           repoToken: ${{ secrets.GITHUB_TOKEN }}
