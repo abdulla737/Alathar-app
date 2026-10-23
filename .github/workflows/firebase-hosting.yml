@@ -48,10 +48,20 @@ jobs:
           fi
           echo "$SA" | python3 -c "import json,sys; k=json.load(sys.stdin); print('::notice::Firebase key OK: project', k.get('project_id'), '·', k.get('client_email'))" \
             || { echo "::error::The secret is not a valid service-account JSON (paste the whole .json file)"; exit 1; }
-      - uses: FirebaseExtended/action-hosting-deploy@v0
-        with:
-          repoToken: ${{ secrets.GITHUB_TOKEN }}
-          firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_ALATHAR_14555 }}
-          channelId: live
-          projectId: alathar-14555
-          entryPoint: website
+      - name: Deploy to Firebase Hosting
+        env:
+          SA: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_ALATHAR_14555 }}
+        working-directory: website
+        run: |
+          echo "$SA" > "$RUNNER_TEMP/sa.json"
+          export GOOGLE_APPLICATION_CREDENTIALS="$RUNNER_TEMP/sa.json"
+          set +e
+          npx --yes firebase-tools@latest deploy --only hosting --project alathar-14555 --non-interactive > "$RUNNER_TEMP/deploy.log" 2>&1
+          code=$?
+          cat "$RUNNER_TEMP/deploy.log"
+          rm -f "$RUNNER_TEMP/sa.json"
+          if [ $code -ne 0 ]; then
+            # Show the reason in the run summary (readable without signing in).
+            grep -iE "error|denied|permission|not found|enable|403|404" "$RUNNER_TEMP/deploy.log" | tail -n 8 | while read -r line; do echo "::error::$line"; done
+            exit $code
+          fi
