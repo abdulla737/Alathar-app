@@ -18,3 +18,5 @@ Manual deploy from a PC with Flutter and the Firebase CLI:
     xcopy /e /i build\web website\dist
     copy website\public\*.html website\dist\ & xcopy /e /i website\public\site website\dist\site
     cd website && firebase deploy --only hosting
+
+The site is rebuilt and published on every such push; Actions → "Run workflow" re-runs it by hand.
