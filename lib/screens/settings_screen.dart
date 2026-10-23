@@ -425,8 +425,9 @@ class _QuranRangeRows extends StatelessWidget {
     final total = q.pageCount;
     final done = QuranStore.instance.pagesDone(1, total);
     final left = total - done;
-    final perDay = settings.quranPagesPerDay;
-    final days = (left / perDay).ceil();
+    final perDay = settings.quranPagesPerDay; // «صفحة» = 2 sides
+    final sides = settings.quranSidesPerDay;
+    final days = (left / sides).ceil();
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -441,7 +442,7 @@ class _QuranRangeRows extends StatelessWidget {
                 child: Text(context.tr('wird_khatma'),
                     style: AppText.ui(size: 15, weight: FontWeight.w600)),
               ),
-              Text(context.tr('wird_khatma_pages', {'t': nn(total)}),
+              Text(context.tr('wird_khatma_pages', {'t': nn(total), 'h': nn((total / 2).ceil())}),
                   style: AppText.ui(size: 13, color: AppColors.muted)),
             ],
           ),
@@ -451,8 +452,8 @@ class _QuranRangeRows extends StatelessWidget {
           child: Text(
               done > 0
                   ? context.tr('wird_khatma_days_left',
-                      {'d': nn(days), 'r': nn(left), 'p': nn(perDay)})
-                  : context.tr('wird_khatma_days', {'d': nn(days), 'p': nn(perDay)}),
+                      {'d': nn(days), 'r': nn(left), 'p': nn(perDay), 's': nn(sides)})
+                  : context.tr('wird_khatma_days', {'d': nn(days), 'p': nn(perDay), 's': nn(sides)}),
               style: AppText.ui(size: 13, color: AppColors.gold, weight: FontWeight.w600)),
         ),
         // What «صفحة» means: one side of a mushaf leaf.

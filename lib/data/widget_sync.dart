@@ -97,7 +97,7 @@ class WidgetSync with WidgetsBindingObserver {
       'hadith': hadith,
       'hadithDone': hadithDone,
       'quranRead': QuranStore.instance.pagesReadToday,
-      'quranGoal': AppSettings.instance.quranPagesPerDay,
+      'quranGoal': AppSettings.instance.quranSidesPerDay,
       'labels': {
         'next': S.t('prayer_next'),
         'in': S.t('prayer_in'),

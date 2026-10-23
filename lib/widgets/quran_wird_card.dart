@@ -49,7 +49,7 @@ class QuranWirdCard extends StatelessWidget {
     // (a new plan from Settings starts at its first page).
     final last = store.wirdBegunToday ? store.lastSurah : null;
     final startPage = store.wirdStartPage(fallback, fromPage, toPage);
-    final endPage = (startPage + settings.quranPagesPerDay - 1).clamp(startPage, toPage);
+    final endPage = (startPage + settings.quranSidesPerDay - 1).clamp(startPage, toPage);
 
     // The verse to show: where you stopped if it is within today's pages,
     // else the first verse of today's first page.
@@ -66,7 +66,7 @@ class QuranWirdCard extends StatelessWidget {
     final started = last != null && (s != fromSurah || ayah != 1);
 
     // Today's goal and progress through the range.
-    final goal = settings.quranPagesPerDay;
+    final goal = settings.quranSidesPerDay; // mushaf sides
     final readToday = store.pagesReadToday;
     final dayProgress = (readToday / goal).clamp(0.0, 1.0);
     final done = readToday >= goal;

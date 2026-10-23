@@ -36,9 +36,9 @@ class StoryCard extends StatelessWidget {
     final part = unit.part;
     final q = QuranData.instance;
     final surah = q.isLoaded ? q.surah(part.surah) : null;
-    final storyNo = quranStories.indexOf(story) + 1;
+    final storyNo = dailyStories.indexOf(story) + 1;
     final counter = context.tr('stories_n_of',
-        {'n': localNum(storyNo), 't': localNum(quranStories.length)});
+        {'n': localNum(storyNo), 't': localNum(dailyStories.length)});
     final title = story.hasParts
         ? '${story.name.v} · ${context.tr('stories_part', {'n': localNum(unit.index + 1), 't': localNum(story.parts.length)})}'
         : story.name.v;
@@ -124,7 +124,9 @@ class StoryCard extends StatelessWidget {
                   children: [
                     Text(context.tr('stories_title'),
                         style: AppText.ui(size: 12, weight: FontWeight.w700, color: AppColors.gold)),
-                    Text(context.tr('stories_today'),
+                    Text(context.tr('stories_group_seerah'),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                         style: AppText.ui(size: 12, color: AppColors.muted)),
                   ],
                 ),

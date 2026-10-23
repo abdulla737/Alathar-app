@@ -135,7 +135,7 @@ class _QuranReaderScreenState extends State<QuranReaderScreen> {
   int get _firstPage => widget.wirdStartPage ?? 1;
   int get _lastPage {
     if (!_wird) return _q.pageCount;
-    final end = _firstPage + AppSettings.instance.quranPagesPerDay - 1;
+    final end = _firstPage + AppSettings.instance.quranSidesPerDay - 1;
     final rangeEnd = _rangeLastPage();
     // Never below the first page, even if the range changed meanwhile.
     return end.clamp(_firstPage, rangeEnd < _firstPage ? _firstPage : rangeEnd);

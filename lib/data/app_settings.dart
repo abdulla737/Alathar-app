@@ -46,7 +46,10 @@ class AppSettings extends ChangeNotifier {
   /// Qur'an pages per day, and the surahs the Qur'an reading covers.
   int hadithPerDay = 1;
   static const maxHadithPerDay = 10;
-  int quranPagesPerDay = 2;
+  /// «صفحات القرآن في اليوم»: one «صفحة» = one leaf = two mushaf sides
+  /// (وجه وظهر), so the daily reading is [quranSidesPerDay] mushaf pages.
+  int quranPagesPerDay = 1;
+  int get quranSidesPerDay => quranPagesPerDay * 2;
   static const maxQuranPagesPerDay = 40;
   /// «ختمة» (the whole mushaf, page 1 to 604; default) or a custom range of
   /// surahs ([rangeFrom] … [rangeTo]).
@@ -80,6 +83,7 @@ class AppSettings extends ChangeNotifier {
   static const _kTranslation = 'translation';
   static const _kHadithPerDay = 'goal_hadith_per_day';
   static const _kQuranPages = 'goal_quran_pages';
+  static const _kQuranLeaves = 'goal_quran_pages_are_leaves';
   static const _kQuranFrom = 'goal_quran_from';
   static const _kQuranTo = 'goal_quran_to';
   static const _kQuranKhatma = 'goal_quran_khatma';
@@ -98,7 +102,15 @@ class AppSettings extends ChangeNotifier {
     bookScale = (p.getDouble(_kBookScale) ?? 1.0).clamp(minBookScale, maxBookScale);
     translation = p.getString(_kTranslation) ?? 'English';
     hadithPerDay = (p.getInt(_kHadithPerDay) ?? 1).clamp(1, maxHadithPerDay);
-    quranPagesPerDay = (p.getInt(_kQuranPages) ?? 2).clamp(1, maxQuranPagesPerDay);
+    // Before v2 the number counted single sides: halve it once so the
+    // daily amount stays the same.
+    var pages = p.getInt(_kQuranPages) ?? 1;
+    if (p.containsKey(_kQuranPages) && !(p.getBool(_kQuranLeaves) ?? false)) {
+      pages = (pages / 2).ceil();
+      p.setInt(_kQuranPages, pages);
+    }
+    p.setBool(_kQuranLeaves, true);
+    quranPagesPerDay = pages.clamp(1, maxQuranPagesPerDay);
     // The daily reading is always a khatma (chosen surahs were removed).
     quranKhatma = true;
     rangeFrom = (p.getInt(_kQuranFrom) ?? 1).clamp(1, 113);

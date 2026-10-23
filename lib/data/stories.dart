@@ -71,6 +71,14 @@ final List<StoryUnit> storyUnits = [
     for (var i = 0; i < s.parts.length; i++) StoryUnit(s, i),
 ];
 
+/// The Today card's daily readings: «من سيرة النبي ﷺ في القرآن» only.
+final List<StoryUnit> dailyStoryUnits =
+    storyUnits.where((u) => u.story.group == StoryGroup.seerah).toList();
+
+/// The stories the Today card goes through.
+final List<QuranStory> dailyStories =
+    quranStories.where((s) => s.group == StoryGroup.seerah).toList();
+
 StoryUnit? storyUnitByKey(String key) {
   for (final u in storyUnits) {
     if (u.key == key) return u;

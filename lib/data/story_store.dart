@@ -105,11 +105,12 @@ class StoryStore extends ChangeNotifier {
       unitsOf(s).firstWhere((u) => !isDone(u), orElse: () => StoryUnit(s, 0));
 
   // ---------------------------------------------------------------- Today
-  /// Today's reading: fixed for the day; a new day moves on to the next
-  /// unread reading (in list order, after the previous one).
+  /// Today's reading («سيرة النبي ﷺ» stories only): fixed for the day; a new
+  /// day moves on to the next unread reading, after the previous one.
   StoryUnit get today {
     final date = UserStore.dayKey(DateTime.now());
-    final saved = storyUnitByKey(_todayKey);
+    var saved = storyUnitByKey(_todayKey);
+    if (saved != null && saved.story.group != StoryGroup.seerah) saved = null;
     if (date == _todayDate && saved != null) return saved;
     final unit = _nextUnread(after: saved);
     _todayDate = date;
@@ -122,12 +123,13 @@ class StoryStore extends ChangeNotifier {
   StoryUnit get tomorrow => _nextUnread(after: today, skip: today);
 
   StoryUnit _nextUnread({StoryUnit? after, StoryUnit? skip}) {
-    final start = after == null ? 0 : storyUnits.indexWhere((u) => u.key == after.key) + 1;
-    for (var i = 0; i < storyUnits.length; i++) {
-      final u = storyUnits[(start + i) % storyUnits.length];
+    final units = dailyStoryUnits;
+    final start = after == null ? 0 : units.indexWhere((u) => u.key == after.key) + 1;
+    for (var i = 0; i < units.length; i++) {
+      final u = units[(start + i) % units.length];
       if (!isDone(u) && u.key != skip?.key) return u;
     }
     // Everything read: start the round again.
-    return storyUnits[start % storyUnits.length];
+    return units[start % units.length];
   }
 }
