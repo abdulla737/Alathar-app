@@ -1,6 +1,6 @@
 # Alathar (الأثر) — Privacy Policy / سياسة الخصوصية
 
-_Last updated: 20 October 2026_
+_Last updated: 23 October 2026 — published at https://alathar-14555.web.app/privacy_
 
 ## English
 
@@ -27,7 +27,7 @@ Alathar is an app for authentic hadith, daily athkar, Kitab at-Tawhid and prayer
 
 **Changes and contact**
 - If this policy changes, the new version will be published at this address.
-- Questions: open an issue at https://github.com/abdulla737/Alathar-app/issues
+- Questions: abdulla737@gmail.com
 
 ---
 
@@ -56,4 +56,4 @@ Alathar is an app for authentic hadith, daily athkar, Kitab at-Tawhid and prayer
 
 **التعديلات والتواصل**
 - عند تعديل هذه السياسة تُنشر النسخة الجديدة على هذا الرابط.
-- للاستفسار: https://github.com/abdulla737/Alathar-app/issues
+- للاستفسار: abdulla737@gmail.com
