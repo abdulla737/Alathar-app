@@ -1,20 +1,44 @@
-# Publishes the Alathar website (website/public: home/support + privacy policy)
-# to Firebase Hosting, project "alathar-14555", whenever it changes on main.
+# Builds the Alathar web app (Flutter web) and publishes it with the static
+# pages (website/public: /support and /privacy) to Firebase Hosting, project
+# "alathar-14555" → https://alathar-14555.web.app
 # Needs the repository secret FIREBASE_SERVICE_ACCOUNT_ALATHAR_14555 (the JSON
 # key of a Firebase service account that may deploy Hosting).
-name: Deploy website to Firebase Hosting
+name: Deploy Alathar web to Firebase Hosting
 on:
   push:
     branches: [main]
     paths:
+      - 'lib/**'
+      - 'assets/**'
+      - 'web/**'
       - 'website/**'
+      - 'pubspec.yaml'
+      - 'pubspec.lock'
       - '.github/workflows/firebase-hosting.yml'
   workflow_dispatch:
+concurrency:
+  group: firebase-hosting
+  cancel-in-progress: true
 jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+      - name: Build the web app
+        run: |
+          flutter pub get
+          flutter build web --release
+      - name: Add the static pages
+        run: |
+          rm -rf website/dist
+          mkdir -p website/dist
+          cp -r build/web/. website/dist/
+          cp website/public/support.html website/public/privacy.html website/public/404.html website/dist/
+          cp -r website/public/site website/dist/site
       - uses: FirebaseExtended/action-hosting-deploy@v0
         with:
           repoToken: ${{ secrets.GITHUB_TOKEN }}

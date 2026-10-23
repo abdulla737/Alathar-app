@@ -1,11 +1,21 @@
 {
   "hosting": {
-    "public": "public",
+    "public": "dist",
     "cleanUrls": true,
     "trailingSlash": false,
     "ignore": ["firebase.json", "**/.*"],
+    "rewrites": [
+      { "source": "**", "destination": "/index.html" }
+    ],
     "headers": [
-      { "source": "**/*.@(png|jpg|svg)", "headers": [{ "key": "Cache-Control", "value": "max-age=604800" }] }
+      {
+        "source": "/@(index.html|flutter_bootstrap.js|flutter_service_worker.js|main.dart.js|version.json|manifest.json)",
+        "headers": [{ "key": "Cache-Control", "value": "no-cache" }]
+      },
+      {
+        "source": "/site/**",
+        "headers": [{ "key": "Cache-Control", "value": "max-age=604800" }]
+      }
     ]
   }
 }

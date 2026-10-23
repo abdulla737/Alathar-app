@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'dart:convert';
-import 'dart:io' show Platform;
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
@@ -28,7 +27,7 @@ class WidgetSync with WidgetsBindingObserver {
   Timer? _debounce;
   bool _started = false;
 
-  static bool get _supported => !kIsWeb && Platform.isIOS;
+  static bool get _supported => !kIsWeb && defaultTargetPlatform == TargetPlatform.iOS;
 
   void start() {
     if (!_supported || _started) return;

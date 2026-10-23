@@ -1,6 +1,6 @@
 import 'dart:convert';
-import 'dart:io' show gzip;
 
+import 'package:archive/archive.dart' show GZipDecoder;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart' show rootBundle;
 
@@ -36,7 +36,8 @@ class TafsirStore {
   }
 
   static List<List<String>> _decode(Uint8List gz) {
-    final list = jsonDecode(utf8.decode(gzip.decode(gz))) as List;
+    // Pure-Dart gzip, so the same code runs in the web version.
+    final list = jsonDecode(utf8.decode(GZipDecoder().decodeBytes(gz))) as List;
     return [for (final s in list) (s as List).cast<String>()];
   }
 

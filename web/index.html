@@ -1,46 +1,53 @@
 <!DOCTYPE html>
-<html>
+<html lang="ar" dir="rtl">
 <head>
-  <!--
-    If you are serving your web app in a path other than the root, change the
-    href value below to reflect the base path you are serving from.
-
-    The path provided below has to start and end with a slash "/" in order for
-    it to work correctly.
-
-    For more details:
-    * https://developer.mozilla.org/en-US/docs/Web/HTML/Element/base
-
-    This is a placeholder for base href that will be replaced by the value of
-    the `--base-href` argument provided to `flutter build`.
-  -->
   <base href="$FLUTTER_BASE_HREF">
-
   <meta charset="UTF-8">
   <meta content="IE=Edge" http-equiv="X-UA-Compatible">
-  <meta name="description" content="A new Flutter project.">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>الأثر — Alathar</title>
+  <meta name="description" content="الأثر: حديث صحيح كل يوم، وأذكارك في وقتها، والقرآن الكريم مع تفسير السعدي، وقصص قرآنية ومواقيت الصلاة. Alathar: a daily authentic hadith, athkar and the Qur'an with tafsir.">
+  <meta name="theme-color" content="#1F3A5F">
 
-  <!-- iOS meta tags & icons -->
+  <!-- iOS: add to home screen -->
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black">
-  <meta name="apple-mobile-web-app-title" content="tawheed">
+  <meta name="apple-mobile-web-app-title" content="الأثر">
   <link rel="apple-touch-icon" href="icons/Icon-192.png">
 
-  <!-- Favicon -->
-  <link rel="icon" type="image/png" href="favicon.png"/>
+  <!-- Share previews -->
+  <meta property="og:title" content="الأثر — Alathar">
+  <meta property="og:description" content="حديث صحيح كل يوم، وأذكارك في وقتها، والقرآن الكريم مع تفسير السعدي">
+  <meta property="og:image" content="site/feature.png">
 
-  <title>tawheed</title>
+  <link rel="icon" type="image/png" href="favicon.png"/>
   <link rel="manifest" href="manifest.json">
+  <style>
+    html, body { margin: 0; height: 100%; background: #1F3A5F; }
+    /* Shown until the app has started. */
+    #splash { position: fixed; inset: 0; display: flex; flex-direction: column;
+      align-items: center; justify-content: center; gap: 18px; color: #d9e2ee;
+      font-family: "Segoe UI", Tahoma, system-ui, sans-serif; font-size: 15px; }
+    #splash img { width: 96px; height: 96px; border-radius: 24px; }
+    #splash i { width: 28px; height: 28px; border: 3px solid rgba(242,193,78,.25);
+      border-top-color: #F2C14E; border-radius: 50%; animation: s 0.9s linear infinite; }
+    @keyframes s { to { transform: rotate(360deg); } }
+    #splash a { color: #F2C14E; font-size: 13px; }
+  </style>
 </head>
 <body>
-  <!--
-    You can customize the "flutter_bootstrap.js" script.
-    This is useful to provide a custom configuration to the Flutter loader
-    or to give the user feedback during the initialization process.
-
-    For more details:
-    * https://docs.flutter.dev/platform-integration/web/initialization
-  -->
+  <div id="splash">
+    <img src="icons/Icon-192.png" alt="الأثر">
+    <i></i>
+    <span>جارٍ تحميل الأثر…</span>
+    <a href="/support">الدعم</a>
+  </div>
+  <script>
+    // Hide the splash once Flutter has drawn its first frame.
+    window.addEventListener('flutter-first-frame', function () {
+      var s = document.getElementById('splash'); if (s) s.remove();
+    });
+  </script>
   <script src="flutter_bootstrap.js" async></script>
 </body>
 </html>
