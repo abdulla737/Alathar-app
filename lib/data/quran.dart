@@ -4,6 +4,9 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart' show rootBundle;
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'app_settings.dart';
+import 'user_store.dart';
+
 /// One surah of the Qur'an.
 class Surah {
   final int number; // 1..114
@@ -360,6 +363,12 @@ class QuranStore extends ChangeNotifier {
     _pagesToday.clear();
   }
 
+  /// The pages read today, in order.
+  List<int> get pagesToday {
+    _rollPagesDay();
+    return _pagesToday.toList()..sort();
+  }
+
   /// Pages read today.
   int get pagesReadToday {
     _rollPagesDay();
@@ -371,6 +380,10 @@ class QuranStore extends ChangeNotifier {
     _rollPagesDay();
     if (!_pagesToday.add(page)) return;
     _prefs?.setString(_kPagesToday, '$_pagesDay:${_pagesToday.join(',')}');
+    // Today's goal reached: remember when (the ✓ box on the Today card).
+    if (_pagesToday.length >= AppSettings.instance.quranSidesPerDay) {
+      UserStore.instance.stampDone('wird:$_pagesDay');
+    }
     notifyListeners();
   }
 

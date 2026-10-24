@@ -10,6 +10,7 @@ import '../theme/app_theme.dart';
 import '../widgets/common.dart';
 import '../widgets/time_now_card.dart';
 import '../widgets/prayer_card.dart';
+import '../widgets/prayer_widgets.dart';
 import '../widgets/quran_wird_card.dart';
 import '../widgets/story_card.dart';
 import 'friday_screen.dart';
@@ -216,6 +217,19 @@ class _HadithOfTheDayCard extends StatelessWidget {
                       color: AppColors.sand,
                       track: Colors.white.withValues(alpha: 0.18),
                     ),
+                    if (doneToday) ...[
+                      const SizedBox(height: 10),
+                      Builder(builder: (context) {
+                        final at = user.doneAt('hadith:${UserStore.dayKey(DateTime.now())}');
+                        return DoneBox(
+                          title: context.tr('done_hadith'),
+                          details: at == null
+                              ? null
+                              : context.tr('done_at', {'t': formatPrayerTime(context, at)}),
+                          onGreen: true,
+                        );
+                      }),
+                    ],
                     const SizedBox(height: 8),
                     Row(
                       children: [

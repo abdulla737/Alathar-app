@@ -2,10 +2,12 @@ import 'package:flutter/material.dart';
 
 import '../data/app_settings.dart';
 import '../data/quran.dart';
+import '../data/user_store.dart';
 import '../l10n/strings.dart';
 import '../screens/quran_reader_screen.dart';
 import '../theme/app_theme.dart';
 import 'common.dart';
+import 'prayer_widgets.dart';
 
 /// Today page: «وردك من القرآن» — the verse where you stopped, how far you
 /// are through the Qur'an, and one tap to continue reading.
@@ -144,6 +146,10 @@ class QuranWirdCard extends StatelessWidget {
               ),
             ],
           ),
+          if (done) ...[
+            const SizedBox(height: 10),
+            _doneBox(context, q, store),
+          ],
           if (store.khatmasDone > 0 && khatma) ...[
             const SizedBox(height: 4),
             Text(context.tr('quran_khatmas_done', {'n': localNum(store.khatmasDone)}),
@@ -171,6 +177,22 @@ class QuranWirdCard extends StatelessWidget {
       ),
     );
   }
+}
+
+/// ✓ box once today's pages are read: which pages, which surah, and when.
+Widget _doneBox(BuildContext context, QuranData q, QuranStore store) {
+  final pages = store.pagesToday;
+  final details = <String>[];
+  if (pages.isNotEmpty) {
+    final a = pages.first, b = pages.last;
+    details.add(context.tr('done_wird_pages',
+        {'p': a == b ? localNum(a) : '${localNum(a)}–${localNum(b)}'}));
+    final sn = q.surah(q.ayatOnPage(a).first.$1);
+    details.add(S.isArabic ? 'سورة ${sn.name}' : sn.translit);
+  }
+  final at = UserStore.instance.doneAt('wird:${UserStore.dayKey(DateTime.now())}');
+  if (at != null) details.add(context.tr('done_at', {'t': formatPrayerTime(context, at)}));
+  return DoneBox(title: context.tr('done_wird'), details: details.join(' · '));
 }
 
 /// A small progress bar with its caption underneath.

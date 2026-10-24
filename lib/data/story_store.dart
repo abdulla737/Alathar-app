@@ -62,8 +62,10 @@ class StoryStore extends ChangeNotifier {
     if (done) {
       _done.add(u.key);
       _progress.remove(u.key);
+      UserStore.instance.stampDone('story:${u.key}', notify: false);
     } else {
       _done.remove(u.key);
+      UserStore.instance.clearDone('story:${u.key}', notify: false);
     }
     _prefs?.setStringList(_kDone, _done.toList());
     _prefs?.setString(_kProgress, jsonEncode(_progress));
@@ -75,6 +77,7 @@ class StoryStore extends ChangeNotifier {
     for (final u in units) {
       _done.remove(u.key);
       _progress.remove(u.key);
+      UserStore.instance.clearDone('story:${u.key}', notify: false);
     }
     _prefs?.setStringList(_kDone, _done.toList());
     _prefs?.setString(_kProgress, jsonEncode(_progress));

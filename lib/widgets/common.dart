@@ -241,3 +241,51 @@ Future<void> confirmResetReading(BuildContext context, String name, VoidCallback
   ScaffoldMessenger.of(context)
       .showSnackBar(SnackBar(content: Text(context.tr('reset_done'))));
 }
+
+/// The ✓ box shown on a Today card once its task is complete:
+/// a filled check, what was done, and the details (when, how much).
+/// [onGreen] is for the dark green card (the daily hadith).
+class DoneBox extends StatelessWidget {
+  const DoneBox(
+      {super.key, required this.title, this.details, this.onGreen = false, this.background});
+
+  final String title;
+  final String? details;
+  final bool onGreen;
+  final Color? background; // e.g. white on a card that is already light green
+
+  @override
+  Widget build(BuildContext context) {
+    final bg = background ?? (onGreen ? Colors.white.withValues(alpha: 0.12) : AppColors.greenSoft);
+    final circle = onGreen ? AppColors.sand : AppColors.green;
+    final tick = onGreen ? AppColors.green : Colors.white;
+    final titleColor = onGreen ? Colors.white : AppColors.green;
+    final detailColor = onGreen ? AppColors.onGreenMuted : AppColors.body;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(14)),
+      child: Row(
+        children: [
+          Container(
+            width: 32,
+            height: 32,
+            decoration: BoxDecoration(color: circle, shape: BoxShape.circle),
+            child: Icon(Icons.check_rounded, size: 20, color: tick),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(title, style: AppText.ui(size: 14, weight: FontWeight.w700, color: titleColor)),
+                if (details != null && details!.isNotEmpty)
+                  Text(details!, style: AppText.ui(size: 12, color: detailColor)),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}

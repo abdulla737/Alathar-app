@@ -10,6 +10,7 @@ import '../data/user_store.dart';
 import '../l10n/strings.dart';
 import '../screens/athkar_counter_screen.dart';
 import '../screens/prayer_screen.dart';
+import '../screens/quran_reader_screen.dart' show localNum;
 import '../theme/app_theme.dart';
 import 'common.dart';
 import 'prayer_widgets.dart';
@@ -309,7 +310,27 @@ class _TimeNowCardState extends State<TimeNowCard> with SingleTickerProviderStat
           ],
         );
 
-        if (done) return AppCard(onTap: () => _open(o), child: body);
+        if (done) {
+          // ✓ box: what was done, how many athkar and at what time.
+          final user = UserStore.instance;
+          final at = user.doneAt('occ:${o.key}') ??
+              (c == null ? null : user.doneAt('athkar:${c.id}:${UserStore.dayKey(now)}'));
+          final time = at == null ? null : context.tr('done_at', {'t': formatPrayerTime(context, at)});
+          final box = o.kind == 'prayer'
+              ? DoneBox(
+                  title: context.tr('done_prayer', {'p': prayerName(context, o.prayer!, o.day)}),
+                  details: time)
+              : DoneBox(
+                  title: context.tr('done_athkar', {'x': _title(context, o)}),
+                  details: [context.tr('done_athkar_n', {'n': localNum(count)}), ?time].join(' · '));
+          return AppCard(
+            onTap: () => _open(o),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [body, const SizedBox(height: 12), box],
+            ),
+          );
+        }
         return AnimatedBuilder(
           animation: _pulse,
           builder: (context, child) {

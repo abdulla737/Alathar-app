@@ -4,11 +4,13 @@ import '../data/app_settings.dart';
 import '../data/quran.dart';
 import '../data/stories.dart';
 import '../data/story_store.dart';
+import '../data/user_store.dart';
 import '../l10n/strings.dart';
 import '../screens/quran_reader_screen.dart' show localNum, quranStyle;
 import '../screens/story_screen.dart';
 import '../theme/app_theme.dart';
 import 'common.dart';
+import 'prayer_widgets.dart';
 
 /// Today page: «قصص قرآنية · قصة اليوم» — today's reading with its key verse;
 /// «أكمل» with progress once started; ✓ and tomorrow's story when done.
@@ -77,6 +79,19 @@ class StoryCard extends StatelessWidget {
                     style: AppText.ui(size: 12, weight: FontWeight.w700, color: AppColors.green)),
               ],
             ),
+            const SizedBox(height: 10),
+            Builder(builder: (context) {
+              final at = UserStore.instance.doneAt('story:${unit.key}');
+              return DoneBox(
+                title: context.tr('done_story'),
+                details: [
+                  if (surah != null)
+                    '${S.isArabic ? 'سورة ${surah.name}' : surah.translit} · ${context.tr('tafsir_ayat_range', {'a': localNum(part.from), 'b': localNum(part.to)})}',
+                  if (at != null) context.tr('done_at', {'t': formatPrayerTime(context, at)}),
+                ].join(' · '),
+                background: AppColors.surface,
+              );
+            }),
             const SizedBox(height: 10),
             Text(
                 context.tr('stories_tomorrow', {

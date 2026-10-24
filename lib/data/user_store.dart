@@ -47,6 +47,10 @@ class UserStore extends ChangeNotifier {
   /// «حان الوقت» occasions marked done ("YYYY-MM-DD key"), the last few days.
   final List<String> _occasionsDone = [];
 
+  /// When a task on the Today page was completed, for its ✓ box:
+  /// 'occ:<occasion key>', 'athkar:<category>:<day>', 'hadith:<day>',
+  /// 'wird:<day>', 'story:<reading>'. Only the latest 80 are kept.
+
   /// Athkar opened but not finished: the count of each dhikr, per sitting
   /// ("YYYY-MM-DD morning", "YYYY-MM-DD after_dhuhr" …). Reopening resumes.
   final Map<String, List<int>> _athkarProgress = {};
@@ -60,6 +64,7 @@ class UserStore extends ChangeNotifier {
   static const _kAthkarPrefix = 'athkar_done_';
   static const _kSeenPrefix = 'athkar_seen_';
   static const _kOccasions = 'occasions_done'; // ["2026-10-22 dhuhr", …]
+  static const _kDoneAt = 'done_at'; // {"occ:2026-10-22 dhuhr": "2026-10-22T12:31:00", …}
   static const _kAthkarProgress = 'athkar_progress'; // {"2026-10-22 morning": [3,1,0,…]}
 
   static String _dayKey(DateTime d) =>
@@ -132,6 +137,13 @@ class UserStore extends ChangeNotifier {
     _occasionsDone
       ..clear()
       ..addAll(p.getStringList(_kOccasions) ?? const []);
+    _doneAt.clear();
+    try {
+      final raw = p.getString(_kDoneAt);
+      if (raw != null) {
+        (jsonDecode(raw) as Map).forEach((k, v) => _doneAt[k as String] = v as String);
+      }
+    } catch (_) {}
     _athkarProgress.clear();
     try {
       final raw = p.getString(_kAthkarProgress);
@@ -178,6 +190,7 @@ class UserStore extends ChangeNotifier {
   void setOccasionDone(String key) {
     if (_occasionsDone.contains(key)) return;
     _occasionsDone.add(key);
+    stampDone('occ:$key', notify: false);
     // Two days of occasions are plenty (it shows only the current one).
     while (_occasionsDone.length > 40) {
       _occasionsDone.removeAt(0);
@@ -251,6 +264,7 @@ class UserStore extends ChangeNotifier {
   void unmarkReadToday(int hadithId) {
     _rollReadDay();
     if (!_readToday.remove(hadithId)) return;
+    if (_readToday.isEmpty) clearDone('hadith:${_dayKey(DateTime.now())}', notify: false);
     _prefs?.setString(_kReadToday, '$_readDay:${_readToday.join(',')}');
     notifyListeners();
   }
@@ -261,6 +275,7 @@ class UserStore extends ChangeNotifier {
     final newEver = _read.add(hadithId);
     final newToday = _readToday.add(hadithId);
     if (!newEver && !newToday) return;
+    if (newToday) stampDone('hadith:${_dayKey(DateTime.now())}', notify: false);
     _prefs?.setStringList(_kRead, [for (final id in _read) '$id']);
     _prefs?.setString(_kReadToday, '$_readDay:${_readToday.join(',')}');
     notifyListeners();
@@ -273,9 +288,35 @@ class UserStore extends ChangeNotifier {
     return _athkarDoneToday.contains(categoryId);
   }
 
+  // ------------------------------------------------------ Completion times
+  final Map<String, String> _doneAt = {};
+
+  DateTime? doneAt(String key) {
+    final v = _doneAt[key];
+    return v == null ? null : DateTime.tryParse(v);
+  }
+
+  /// Remembers now as the time [key] was completed (keeps an earlier time).
+  void stampDone(String key, {bool notify = true}) {
+    if (_doneAt.containsKey(key)) return;
+    _doneAt[key] = DateTime.now().toIso8601String();
+    while (_doneAt.length > 80) {
+      _doneAt.remove(_doneAt.keys.first);
+    }
+    _prefs?.setString(_kDoneAt, jsonEncode(_doneAt));
+    if (notify) notifyListeners();
+  }
+
+  void clearDone(String key, {bool notify = true}) {
+    if (_doneAt.remove(key) == null) return;
+    _prefs?.setString(_kDoneAt, jsonEncode(_doneAt));
+    if (notify) notifyListeners();
+  }
+
   void setAthkarDoneToday(int categoryId) {
     _rollDayIfNeeded();
     if (!_athkarDoneToday.add(categoryId)) return;
+    stampDone('athkar:$categoryId:${_dayKey(DateTime.now())}', notify: false);
     _prefs?.setStringList(
         '$_kAthkarPrefix$_today', [for (final id in _athkarDoneToday) '$id']);
     notifyListeners();
