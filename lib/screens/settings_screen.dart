@@ -7,6 +7,7 @@ import '../data/content_sync.dart';
 import '../data/user_store.dart';
 import '../l10n/strings.dart';
 import '../theme/app_theme.dart';
+import 'plan_settings.dart';
 import 'saved_screen.dart';
 
 class SettingsScreen extends StatelessWidget {
@@ -109,6 +110,7 @@ class SettingsScreen extends StatelessWidget {
                   onChanged: settings.setQuranPagesPerDay,
                 ),
                 const _QuranRangeRows(),
+                const ExtraPlansRows(),
               ],
             ),
             const SizedBox(height: 8),

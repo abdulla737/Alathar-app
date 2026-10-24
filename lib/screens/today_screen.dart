@@ -8,6 +8,8 @@ import '../data/sample_data.dart';
 import '../l10n/strings.dart';
 import '../theme/app_theme.dart';
 import '../widgets/common.dart';
+import '../widgets/kahf_card.dart';
+import '../widgets/plan_card.dart';
 import '../widgets/time_now_card.dart';
 import '../widgets/prayer_card.dart';
 import '../widgets/prayer_widgets.dart';
@@ -101,6 +103,9 @@ class TodayScreen extends StatelessWidget {
               )),
             ),
             const SizedBox(height: 16),
+            // «قراءة سورة الكهف»: Fridays only, with its own progress.
+            const KahfCard(),
+            const SizedBox(height: 16),
           ],
 
           // «حان الوقت»: the prayer or athkar of this moment, with ✓ when done.
@@ -110,6 +115,8 @@ class TodayScreen extends StatelessWidget {
           // «ورد التلاوة اليومية» first, then «ورد الحديث اليومي».
           const QuranWirdCard(),
           const SizedBox(height: 16),
+          // Extra plans switched on in Settings («تفعيل»), each with its own progress.
+          const ActivePlanCards(),
           // «الحديث اليومي - التوحيد».
           _HadithOfTheDayCard(
             collectionId: ContentStore.tawhidCollectionId,

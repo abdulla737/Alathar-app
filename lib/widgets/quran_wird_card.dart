@@ -125,7 +125,7 @@ class QuranWirdCard extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Expanded(
-                child: _Bar(
+                child: WirdBar(
                   value: dayProgress,
                   color: AppColors.green,
                   label: context.tr('quran_today_progress',
@@ -134,7 +134,7 @@ class QuranWirdCard extends StatelessWidget {
               ),
               const SizedBox(width: 14),
               Expanded(
-                child: _Bar(
+                child: WirdBar(
                   value: cycleProgress,
                   color: AppColors.gold,
                   label: context.tr(khatma ? 'quran_khatma_progress' : 'quran_range_progress', {
@@ -196,11 +196,11 @@ Widget _doneBox(BuildContext context, QuranData q, QuranStore store) {
 }
 
 /// A small progress bar with its caption underneath.
-class _Bar extends StatelessWidget {
+class WirdBar extends StatelessWidget {
   final double value;
   final Color color;
   final String label;
-  const _Bar({required this.value, required this.color, required this.label});
+  const WirdBar({required this.value, required this.color, required this.label});
 
   @override
   Widget build(BuildContext context) => Column(

@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 
 import '../data/app_settings.dart';
 import '../data/quran.dart';
+import '../data/reading_plans.dart';
+import '../data/friday_data.dart' show isFriday;
 import '../l10n/strings.dart';
 import '../theme/app_theme.dart';
 import '../widgets/quran_share_card.dart';
@@ -108,6 +110,13 @@ class QuranReaderScreen extends StatefulWidget {
   /// this page (count from Settings), then a "done" page. Null = whole mushaf.
   final int? wirdStartPage;
 
+  /// With [wirdStartPage]: today's pages of an extra plan (Settings →
+  /// «الورد اليومي» → +) instead of the main daily reading.
+  final String? planId;
+
+  /// With [wirdStartPage]: Friday's «سورة الكهف», the whole surah.
+  final bool kahf;
+
   /// Opened from a search result: the verse stays highlighted (until you
   /// tap or turn the page) and the page scrolls to it.
   final bool focus;
@@ -116,6 +125,8 @@ class QuranReaderScreen extends StatefulWidget {
       required this.surah,
       this.ayah = 1,
       this.wirdStartPage,
+      this.planId,
+      this.kahf = false,
       this.focus = false});
 
   @override
@@ -130,12 +141,18 @@ class _QuranReaderScreenState extends State<QuranReaderScreen> {
 
   bool get _wird => widget.wirdStartPage != null;
 
+  /// The extra plan being read (null = main daily reading / free reading).
+  ReadingPlan? get _plan =>
+      widget.planId == null ? null : PlanStore.instance.plan(widget.planId!);
+
   /// First and last page this reader shows (the whole mushaf, or today's
   /// pages in daily-reading mode).
   int get _firstPage => widget.wirdStartPage ?? 1;
   int get _lastPage {
     if (!_wird) return _q.pageCount;
-    final end = _firstPage + AppSettings.instance.quranSidesPerDay - 1;
+    if (widget.kahf) return _q.surahPages(PlanStore.kahfSurah).$2;
+    final sides = _plan?.sidesPerDay ?? AppSettings.instance.quranSidesPerDay;
+    final end = _firstPage + sides - 1;
     final rangeEnd = _rangeLastPage();
     // Never below the first page, even if the range changed meanwhile.
     return end.clamp(_firstPage, rangeEnd < _firstPage ? _firstPage : rangeEnd);
@@ -143,6 +160,8 @@ class _QuranReaderScreenState extends State<QuranReaderScreen> {
 
   /// Last page of the chosen surahs (Settings → «الورد اليومي»).
   int _rangeLastPage() {
+    final plan = _plan;
+    if (plan != null) return plan.pages(_q).$2;
     final last = _q.surah(AppSettings.instance.quranToSurah);
     return _q.pageOf(last.number, last.count);
   }
@@ -152,7 +171,20 @@ class _QuranReaderScreenState extends State<QuranReaderScreen> {
   /// Reached the last page of today's reading: tomorrow starts after it
   /// (back to the first chosen surah after the last one).
   void _checkWirdEnd(int page) {
-    if (!_wird) return;
+    if (!_wird || widget.kahf) return;
+    final plan = _plan;
+    if (plan != null) {
+      final plans = PlanStore.instance;
+      final (from, to) = plan.pages(_q);
+      plans.recordProgress(plan, page, from, to);
+      if (page != _lastPage) return;
+      if (page + 1 > to) {
+        plans.completeRound(plan, from);
+      } else {
+        plans.finishDay(plan, page + 1);
+      }
+      return;
+    }
     final store = QuranStore.instance;
     final from = _q.pageOf(AppSettings.instance.quranFromSurah, 1);
     final to = _rangeLastPage();
@@ -222,6 +254,17 @@ class _QuranReaderScreenState extends State<QuranReaderScreen> {
   /// Counts the page toward today's reading goal when it is inside the
   /// chosen range of surahs (Settings → «الورد اليومي»).
   void _countPage(int page) {
+    // Fridays: every page of al-Kahf counts toward «قراءة سورة الكهف».
+    final (kFirst, kLast) = _q.surahPages(PlanStore.kahfSurah);
+    if (page >= kFirst && page <= kLast && isFriday(DateTime.now())) {
+      PlanStore.instance.markKahfPage(page, kLast - kFirst + 1);
+    }
+    if (widget.kahf) return;
+    final plan = _plan;
+    if (plan != null) {
+      PlanStore.instance.markPage(plan, page);
+      return;
+    }
     final settings = AppSettings.instance;
     final from = _q.pageOf(settings.quranFromSurah, 1);
     final last = _q.surah(settings.quranToSurah);
@@ -367,7 +410,8 @@ class _QuranReaderScreenState extends State<QuranReaderScreen> {
   @override
   Widget build(BuildContext context) {
     return ListenableBuilder(
-      listenable: Listenable.merge([QuranStore.instance, AppSettings.instance]),
+      listenable:
+          Listenable.merge([QuranStore.instance, AppSettings.instance, PlanStore.instance]),
       builder: (context, _) {
         final store = QuranStore.instance;
         final size = store.size;
@@ -425,7 +469,10 @@ class _QuranReaderScreenState extends State<QuranReaderScreen> {
               itemCount: _windowPages + (_wird ? 1 : 0),
               onPageChanged: _onPageChanged,
               itemBuilder: (context, i) => i >= _windowPages
-                  ? _WirdDone(nextPage: _lastPage + 1 > _q.pageCount ? 1 : _lastPage + 1)
+                  ? _WirdDone(
+                      nextPage: _lastPage + 1 > _q.pageCount ? 1 : _lastPage + 1,
+                      planId: widget.planId,
+                      kahf: widget.kahf)
                   : _buildPage(_firstPage + i, size, OrnamentPalette.of(store.ornament)),
             ),
           ),
@@ -564,12 +611,24 @@ class _QuranReaderScreenState extends State<QuranReaderScreen> {
 /// in the full mushaf.
 class _WirdDone extends StatelessWidget {
   final int nextPage;
-  const _WirdDone({required this.nextPage});
+  final String? planId;
+  final bool kahf;
+  const _WirdDone({required this.nextPage, this.planId, this.kahf = false});
 
   @override
   Widget build(BuildContext context) {
     final settings = AppSettings.instance;
     final q = QuranData.instance;
+    final plan = planId == null ? null : PlanStore.instance.plan(planId!);
+    // «أضف صفحة»: to the plan being read, or to the main daily reading.
+    final perDay = plan?.pagesPerDay ?? settings.quranPagesPerDay;
+    void addPage() {
+      if (plan != null) {
+        PlanStore.instance.setPagesPerDay(plan.id, plan.pagesPerDay + 1);
+      } else {
+        settings.setQuranPagesPerDay(settings.quranPagesPerDay + 1);
+      }
+    }
     return Center(
       child: SingleChildScrollView(
         padding: const EdgeInsets.all(28),
@@ -578,17 +637,17 @@ class _WirdDone extends StatelessWidget {
           children: [
             const Icon(Icons.verified_rounded, color: AppColors.gold, size: 64),
             const SizedBox(height: 12),
-            Text(context.tr('quran_wird_done_title'),
+            Text(context.tr(kahf ? 'kahf_done_title' : 'quran_wird_done_title'),
                 textAlign: TextAlign.center,
                 style: AppText.ui(size: 20, weight: FontWeight.w700)),
             const SizedBox(height: 6),
-            Text(context.tr('quran_wird_done_body'),
+            Text(context.tr(kahf ? 'kahf_done_body' : 'quran_wird_done_body'),
                 textAlign: TextAlign.center,
                 style: AppText.ui(size: 14, color: AppColors.muted, height: 1.6)),
             const SizedBox(height: 22),
-            if (settings.quranPagesPerDay < AppSettings.maxQuranPagesPerDay)
+            if (!kahf && perDay < AppSettings.maxQuranPagesPerDay)
               FilledButton.icon(
-                onPressed: () => settings.setQuranPagesPerDay(settings.quranPagesPerDay + 1),
+                onPressed: addPage,
                 style: FilledButton.styleFrom(
                   backgroundColor: AppColors.green,
                   minimumSize: const Size(double.infinity, 50),

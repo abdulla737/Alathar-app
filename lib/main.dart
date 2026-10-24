@@ -9,6 +9,7 @@ import 'data/content_store.dart';
 import 'data/content_sync.dart';
 import 'data/prayer_store.dart';
 import 'data/quran.dart';
+import 'data/reading_plans.dart';
 import 'data/reminders.dart';
 import 'data/story_store.dart';
 import 'data/weather.dart';
@@ -31,6 +32,7 @@ Future<void> main() async {
   await _step('prayer', PrayerStore.instance.load);
   await _step('quran', QuranStore.instance.load);
   await _step('stories', StoryStore.instance.load);
+  await _step('plans', PlanStore.instance.load);
 
   runApp(AlatharApp(showOnboarding: !AppSettings.instance.onboardingDone));
 
