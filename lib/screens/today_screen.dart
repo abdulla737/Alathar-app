@@ -7,6 +7,7 @@ import '../data/user_store.dart';
 import '../data/sample_data.dart';
 import '../l10n/strings.dart';
 import '../theme/app_theme.dart';
+import '../widgets/amthal_card.dart';
 import '../widgets/common.dart';
 import '../widgets/kahf_card.dart';
 import '../widgets/plan_card.dart';
@@ -128,6 +129,9 @@ class TodayScreen extends StatelessWidget {
           const SizedBox(height: 16),
           // «قصص قرآنية · قصة اليوم» — last on the page.
           const StoryCard(),
+          const SizedBox(height: 16),
+          // «الأمثال في القرآن»: one parable a day.
+          const AmthalCard(),
           const SizedBox(height: 16),
 
 

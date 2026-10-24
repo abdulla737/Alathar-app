@@ -109,7 +109,7 @@ class _StoryScreenState extends State<StoryScreen> {
         backgroundColor: AppColors.ground,
         surfaceTintColor: Colors.transparent,
         centerTitle: true,
-        title: Text(context.tr('stories_title'),
+        title: Text(context.tr(unit.story.group == StoryGroup.amthal ? 'amthal_title' : 'stories_title'),
             style: AppText.ui(size: 15, weight: FontWeight.w600)),
         actions: [
           ListenableBuilder(
@@ -203,7 +203,7 @@ class _StoryScreenState extends State<StoryScreen> {
         const SizedBox(height: 18),
 
         // «القصة باختصار»
-        Text(context.tr('stories_summary'), style: AppText.ui(size: 15, weight: FontWeight.w700)),
+        Text(context.tr(story.group == StoryGroup.amthal ? 'amthal_meaning' : 'stories_summary'), style: AppText.ui(size: 15, weight: FontWeight.w700)),
         const SizedBox(height: 8),
         AppCard(
           child: Text(story.summary.v,
@@ -293,8 +293,8 @@ class _StoryScreenState extends State<StoryScreen> {
         const SizedBox(height: 14),
 
         SlideToConfirm(
-          label: context.tr('stories_slide'),
-          doneLabel: context.tr('stories_slide_done'),
+          label: context.tr(story.group == StoryGroup.amthal ? 'amthal_slide' : 'stories_slide'),
+          doneLabel: context.tr(story.group == StoryGroup.amthal ? 'amthal_slide_done' : 'stories_slide_done'),
           confirmed: store.isDone(unit),
           onConfirm: () => store.setDone(unit, true),
           onUndo: () => store.setDone(unit, false),

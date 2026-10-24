@@ -21,6 +21,9 @@ class StoryStore extends ChangeNotifier {
   static const _kDone = 'story_done';
   static const _kProgress = 'story_progress';
   static const _kToday = 'story_today';
+  static const _kTodayMathal = 'amthal_today';
+  String _mathalDate = '';
+  String _mathalKey = '';
 
   Future<void> load() async {
     final p = _prefs = await SharedPreferences.getInstance();
@@ -39,6 +42,11 @@ class StoryStore extends ChangeNotifier {
     if (today.length == 2) {
       _todayDate = today[0];
       _todayKey = today[1];
+    }
+    final m = (p.getString(_kTodayMathal) ?? '').split('|');
+    if (m.length == 2) {
+      _mathalDate = m[0];
+      _mathalKey = m[1];
     }
   }
 
@@ -125,8 +133,28 @@ class StoryStore extends ChangeNotifier {
   /// The reading after today's (shown once today's is done).
   StoryUnit get tomorrow => _nextUnread(after: today, skip: today);
 
-  StoryUnit _nextUnread({StoryUnit? after, StoryUnit? skip}) {
-    final units = dailyStoryUnits;
+  /// Today's parable («الأمثال في القرآن»): fixed for the day, then the next
+  /// unread one in mushaf order.
+  StoryUnit get todayMathal {
+    final date = UserStore.dayKey(DateTime.now());
+    var saved = storyUnitByKey(_mathalKey);
+    if (saved != null && saved.story.group != StoryGroup.amthal) saved = null;
+    if (date == _mathalDate && saved != null) return saved;
+    final unit = _nextUnread(after: saved, units: dailyAmthalUnits);
+    _mathalDate = date;
+    _mathalKey = unit.key;
+    _prefs?.setString(_kTodayMathal, '$date|${unit.key}');
+    return unit;
+  }
+
+  StoryUnit get tomorrowMathal =>
+      _nextUnread(after: todayMathal, skip: todayMathal, units: dailyAmthalUnits);
+
+  /// Parables read so far.
+  int get amthalDone => dailyAmthalUnits.where(isDone).length;
+
+  StoryUnit _nextUnread({StoryUnit? after, StoryUnit? skip, List<StoryUnit>? units}) {
+    units ??= dailyStoryUnits;
     final start = after == null ? 0 : units.indexWhere((u) => u.key == after.key) + 1;
     for (var i = 0; i < units.length; i++) {
       final u = units[(start + i) % units.length];

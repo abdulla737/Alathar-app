@@ -31,6 +31,7 @@ class StoryLibrary extends StatelessWidget {
     StoryGroup.nations: 'stories_group_nations',
     StoryGroup.people: 'stories_group_people',
     StoryGroup.seerah: 'stories_group_seerah',
+    StoryGroup.amthal: 'amthal_title',
   };
 
   bool _matches(QuranStory s) {

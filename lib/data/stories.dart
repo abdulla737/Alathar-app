@@ -1,3 +1,4 @@
+import 'amthal.dart';
 import 'app_settings.dart';
 
 /// Text in the app languages; Urdu and English fall back to Arabic.
@@ -29,7 +30,7 @@ class StoryPart {
   int get count => to - from + 1;
 }
 
-enum StoryGroup { prophets, nations, people, seerah }
+enum StoryGroup { prophets, nations, people, seerah, amthal }
 
 /// «قصص قرآنية»: a story told in the Qur'an. The verses and the Sa'di tafsir
 /// come from the bundled mushaf; only the summary and lessons are written here.
@@ -65,11 +66,16 @@ class StoryUnit {
   bool get isLast => index == story.parts.length - 1;
 }
 
-/// Every reading in daily order: the stories in list order, parts in order.
+/// Every reading in daily order: the stories in list order, parts in order,
+/// then the parables («الأمثال في القرآن», read the same way).
 final List<StoryUnit> storyUnits = [
-  for (final s in quranStories)
+  for (final s in [...quranStories, ...quranAmthal])
     for (var i = 0; i < s.parts.length; i++) StoryUnit(s, i),
 ];
+
+/// The Today card «الأمثال في القرآن»: one parable a day, in mushaf order.
+final List<StoryUnit> dailyAmthalUnits =
+    storyUnits.where((u) => u.story.group == StoryGroup.amthal).toList();
 
 /// The Today card's daily readings: «من سيرة النبي ﷺ في القرآن» only.
 final List<StoryUnit> dailyStoryUnits =
