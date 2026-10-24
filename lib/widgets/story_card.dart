@@ -45,66 +45,8 @@ class StoryCard extends StatelessWidget {
         ? '${story.name.v} · ${context.tr('stories_part', {'n': localNum(unit.index + 1), 't': localNum(story.parts.length)})}'
         : story.name.v;
 
-    if (store.isDone(unit)) {
-      final next = store.tomorrow;
-      return AppCard(
-        color: AppColors.greenSoft,
-        borderWidth: 0,
-        radius: 24,
-        onTap: () => _open(context, unit),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Row(
-              children: [
-                Container(
-                  width: 44,
-                  height: 44,
-                  decoration: const BoxDecoration(color: AppColors.green, shape: BoxShape.circle),
-                  child: const Icon(Icons.check_rounded, color: Colors.white, size: 24),
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text('${context.tr('stories_title')} · ${context.tr('stories_done')}',
-                          style: AppText.ui(
-                              size: 12, weight: FontWeight.w700, color: AppColors.green)),
-                      Text(title, style: AppText.ui(size: 17, weight: FontWeight.w700)),
-                    ],
-                  ),
-                ),
-                Text(counter,
-                    style: AppText.ui(size: 12, weight: FontWeight.w700, color: AppColors.green)),
-              ],
-            ),
-            const SizedBox(height: 10),
-            Builder(builder: (context) {
-              final at = UserStore.instance.doneAt('story:${unit.key}');
-              return DoneBox(
-                title: context.tr('done_story'),
-                details: [
-                  if (surah != null)
-                    '${S.isArabic ? 'سورة ${surah.name}' : surah.translit} · ${context.tr('tafsir_ayat_range', {'a': localNum(part.from), 'b': localNum(part.to)})}',
-                  if (at != null) context.tr('done_at', {'t': formatPrayerTime(context, at)}),
-                ].join(' · '),
-                background: AppColors.surface,
-              );
-            }),
-            const SizedBox(height: 10),
-            Text(
-                context.tr('stories_tomorrow', {
-                  'name': next.story.hasParts
-                      ? '${next.story.name.v} (${localNum(next.index + 1)}/${localNum(next.story.parts.length)})'
-                      : next.story.name.v
-                }),
-                style: AppText.ui(size: 13, color: AppColors.body)),
-          ],
-        ),
-      );
-    }
-
+    final done = store.isDone(unit);
+    final doneAt = done ? UserStore.instance.doneAt('story:${unit.key}') : null;
     final started = store.isStarted(unit);
     final progress = store.progressOf(unit);
     final (ks, ka) = story.keyVerse;
@@ -115,7 +57,7 @@ class StoryCard extends StatelessWidget {
 
     return AppCard(
       radius: 24,
-      borderColor: AppColors.gold,
+      borderColor: done ? AppColors.green : AppColors.gold,
       borderWidth: 1.5,
       onTap: () => _open(context, unit),
       child: Column(
@@ -202,7 +144,13 @@ class StoryCard extends StatelessWidget {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                        started
+                        done
+                            ? [
+                                context.tr('stories_done'),
+                                if (doneAt != null)
+                                  context.tr('done_at', {'t': formatPrayerTime(context, doneAt)}),
+                              ].join(' · ')
+                            : started
                             ? context.tr('stories_progress_pct',
                                 {'p': localNum((progress * 100).round())})
                             : '${context.tr('quran_ayat', {'n': localNum(part.count)})} · ${context.tr('stories_minutes', {'n': localNum(minutes)})}',
@@ -211,6 +159,9 @@ class StoryCard extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 12),
+              if (done)
+                const CompletedChip()
+              else
               FilledButton(
                 onPressed: () => _open(context, unit),
                 style: FilledButton.styleFrom(
@@ -224,6 +175,16 @@ class StoryCard extends StatelessWidget {
               ),
             ],
           ),
+          if (done) ...[
+            const SizedBox(height: 10),
+            Text(
+                context.tr('stories_tomorrow', {
+                  'name': store.tomorrow.story.hasParts
+                      ? '${store.tomorrow.story.name.v} (${localNum(store.tomorrow.index + 1)}/${localNum(store.tomorrow.story.parts.length)})'
+                      : store.tomorrow.story.name.v
+                }),
+                style: AppText.ui(size: 13, color: AppColors.body)),
+          ],
         ],
       ),
     );

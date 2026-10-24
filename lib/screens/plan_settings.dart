@@ -246,6 +246,22 @@ Future<void> showAddPlan(BuildContext context) async {
                   _stepper(pages, 1, PlanStore.maxPagesPerDay, (v) => setState(() => pages = v))),
               Text(sheet.tr('wird_page_hint'),
                   style: AppText.ui(size: 12, height: 1.5, color: AppColors.muted)),
+              const SizedBox(height: 12),
+              // How long the chosen plan takes at this many pages a day.
+              Builder(builder: (sheet) {
+                final q = QuranData.instance;
+                final (a, _) = q.surahPages(switch (kind) {
+                  PlanKind.khatma => 1,
+                  PlanKind.surah => surah,
+                  PlanKind.range => from,
+                });
+                final (_, b) = q.surahPages(switch (kind) {
+                  PlanKind.khatma => 114,
+                  PlanKind.surah => surah,
+                  PlanKind.range => to,
+                });
+                return _CalcBox(sides: b - a + 1, pagesPerDay: pages);
+              }),
               const SizedBox(height: 16),
               FilledButton.icon(
                 onPressed: () {
@@ -276,6 +292,45 @@ Future<void> showAddPlan(BuildContext context) async {
   );
 }
 
+/// «المجموع ٦٠٤ وجهًا · تُتمّها في ٣٠٢ يومًا»: the plan's length and the
+/// days it takes at [pagesPerDay] (×2 sides). [remaining]: what is left.
+class _CalcBox extends StatelessWidget {
+  final int sides;
+  final int pagesPerDay;
+  final bool remaining;
+  const _CalcBox({required this.sides, required this.pagesPerDay, this.remaining = false});
+
+  @override
+  Widget build(BuildContext context) {
+    final perDay = pagesPerDay * 2;
+    final days = (sides / perDay).ceil().clamp(1, 100000);
+    return Container(
+      padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
+      decoration: BoxDecoration(
+          color: AppColors.sandSoft, borderRadius: BorderRadius.circular(14)),
+      child: Row(
+        children: [
+          const Icon(Icons.event_available_outlined, color: AppColors.goldDark, size: 22),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(context.tr('plan_calc_days', {'d': localNum(days)}),
+                    style: AppText.ui(size: 15, weight: FontWeight.w700, color: AppColors.brown)),
+                Text(
+                    context.tr(remaining ? 'plan_calc_left' : 'plan_calc_total',
+                        {'t': localNum(sides), 's': localNum(perDay)}),
+                    style: AppText.ui(size: 12, color: AppColors.brown)),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 /// Tap a plan: pages per day, start again, delete.
 Future<void> _showEditPlan(BuildContext context, ReadingPlan plan) {
   final store = PlanStore.instance;
@@ -298,7 +353,12 @@ Future<void> _showEditPlan(BuildContext context, ReadingPlan plan) {
                   sheet.tr('wird_quran_pages'),
                   _stepper(plan.pagesPerDay, 1, PlanStore.maxPagesPerDay,
                       (v) => store.setPagesPerDay(plan.id, v))),
-              const SizedBox(height: 6),
+              Builder(builder: (sheet) {
+                final (first, last) = plan.pages(QuranData.instance);
+                final left = (last - first + 1) - store.pagesDone(plan, first, last);
+                return _CalcBox(sides: left, pagesPerDay: plan.pagesPerDay, remaining: true);
+              }),
+              const SizedBox(height: 10),
               OutlinedButton.icon(
                 onPressed: () async {
                   final ok = await _confirm(sheet, sheet.tr('plan_restart_q'));

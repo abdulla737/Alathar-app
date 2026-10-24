@@ -289,3 +289,30 @@ class DoneBox extends StatelessWidget {
     );
   }
 }
+
+/// In place of a «اقرأ» button once the reading is complete: ✓ «تمّت».
+class CompletedChip extends StatelessWidget {
+  const CompletedChip({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: 44,
+      padding: const EdgeInsets.symmetric(horizontal: 14),
+      decoration: BoxDecoration(
+        color: AppColors.greenSoft,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: AppColors.green, width: 1.2),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Icon(Icons.check_circle_rounded, color: AppColors.green, size: 20),
+          const SizedBox(width: 6),
+          Text(context.tr('reading_completed'),
+              style: AppText.ui(size: 14, weight: FontWeight.w700, color: AppColors.green)),
+        ],
+      ),
+    );
+  }
+}

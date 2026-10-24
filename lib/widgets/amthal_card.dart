@@ -75,42 +75,10 @@ class AmthalCard extends StatelessWidget {
             ],
           ),
         ),
-        if (done)
-          Pill(context.tr('wird_done'),
-              background: AppColors.greenSoft, foreground: AppColors.green),
       ],
     );
 
-    if (done) {
-      final next = store.tomorrowMathal;
-      final at = UserStore.instance.doneAt('story:${unit.key}');
-      return AppCard(
-        color: _oliveBg,
-        borderWidth: 0,
-        radius: 24,
-        onTap: () => _open(context, unit),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            header,
-            const SizedBox(height: 10),
-            Text(story.name.v, style: AppText.ui(size: 17, weight: FontWeight.w700)),
-            const SizedBox(height: 10),
-            DoneBox(
-              title: context.tr('amthal_done'),
-              details: [
-                if (where.isNotEmpty) where,
-                if (at != null) context.tr('done_at', {'t': formatPrayerTime(context, at)}),
-              ].join(' · '),
-              background: Colors.white,
-            ),
-            const SizedBox(height: 10),
-            Text(context.tr('amthal_tomorrow', {'name': next.story.name.v}),
-                style: AppText.ui(size: 13, color: const Color(0xFF2E3833))),
-          ],
-        ),
-      );
-    }
+    final at = done ? UserStore.instance.doneAt('story:${unit.key}') : null;
 
     final (ks, ka) = story.keyVerse;
     final keyText = q.isLoaded && ks <= q.surahs.length && ka <= q.surah(ks).count
@@ -121,7 +89,8 @@ class AmthalCard extends StatelessWidget {
 
     return AppCard(
       color: _oliveBg,
-      borderWidth: 0,
+      borderColor: done ? AppColors.green : _olive,
+      borderWidth: 1.5,
       radius: 24,
       onTap: () => _open(context, unit),
       child: Column(
@@ -161,7 +130,13 @@ class AmthalCard extends StatelessWidget {
                     ProgressLine(value: progress, height: 6, color: _olive, track: _oliveTrack),
                     const SizedBox(height: 4),
                     Text(
-                        started
+                        done
+                            ? [
+                                context.tr('amthal_done_short'),
+                                if (at != null)
+                                  context.tr('done_at', {'t': formatPrayerTime(context, at)}),
+                              ].join(' · ')
+                            : started
                             ? context.tr('stories_progress_pct',
                                 {'p': localNum((progress * 100).round())})
                             : context.tr('amthal_hint'),
@@ -170,6 +145,9 @@ class AmthalCard extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 12),
+              if (done)
+                const CompletedChip()
+              else
               FilledButton(
                 onPressed: () => _open(context, unit),
                 style: FilledButton.styleFrom(
@@ -183,6 +161,11 @@ class AmthalCard extends StatelessWidget {
               ),
             ],
           ),
+          if (done) ...[
+            const SizedBox(height: 10),
+            Text(context.tr('amthal_tomorrow', {'name': store.tomorrowMathal.story.name.v}),
+                style: AppText.ui(size: 13, color: const Color(0xFF2E3833))),
+          ],
         ],
       ),
     );

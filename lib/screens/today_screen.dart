@@ -131,6 +131,8 @@ class TodayScreen extends StatelessWidget {
           // «الأمثال في القرآن»: one parable a day.
           const AmthalCard(),
           const SizedBox(height: 16),
+          // Always last: add another daily reading.
+          const AddPlanStrip(),
 
 
 

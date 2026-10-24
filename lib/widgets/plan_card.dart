@@ -62,6 +62,57 @@ class ActivePlanCards extends StatelessWidget {
   }
 }
 
+/// End of Today: a short «أضف وردًا يوميًا آخر» row that opens the
+/// add-plan sheet (only when a plan is already shown; else the
+/// «ليس لديك ورد يومي» card is there).
+class AddPlanStrip extends StatelessWidget {
+  const AddPlanStrip({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return ListenableBuilder(
+      listenable: PlanStore.instance,
+      builder: (context, _) {
+        if (PlanStore.instance.activePlans.isEmpty) return const SizedBox(height: 0);
+        return Padding(
+          padding: const EdgeInsets.only(bottom: 16),
+          child: AppCard(
+            radius: 18,
+            borderColor: AppColors.line,
+            padding: const EdgeInsets.fromLTRB(14, 10, 14, 10),
+            onTap: () => showAddPlan(context),
+            child: Row(
+              children: [
+                Container(
+                  width: 36,
+                  height: 36,
+                  decoration:
+                      const BoxDecoration(color: AppColors.greenSoft, shape: BoxShape.circle),
+                  child: const Icon(Icons.add, color: AppColors.green, size: 22),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(context.tr('plan_add_more'),
+                          style: AppText.ui(size: 14, weight: FontWeight.w700, color: AppColors.green)),
+                      Text(context.tr('plan_add_more_sub'),
+                          style: AppText.ui(size: 12, color: AppColors.muted)),
+                    ],
+                  ),
+                ),
+                Icon(S.isRtl ? Icons.chevron_left : Icons.chevron_right,
+                    color: AppColors.green, size: 20),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+}
+
 /// «ليس لديك ورد يومي» — tap or «أضف وردًا» opens the add-plan sheet.
 class _NoPlanCard extends StatelessWidget {
   const _NoPlanCard();
