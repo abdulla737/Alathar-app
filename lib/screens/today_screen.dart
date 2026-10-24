@@ -14,7 +14,6 @@ import '../widgets/plan_card.dart';
 import '../widgets/time_now_card.dart';
 import '../widgets/prayer_card.dart';
 import '../widgets/prayer_widgets.dart';
-import '../widgets/quran_wird_card.dart';
 import '../widgets/story_card.dart';
 import 'friday_screen.dart';
 import 'hadith_detail_screen.dart';
@@ -114,9 +113,8 @@ class TodayScreen extends StatelessWidget {
           const SizedBox(height: 16),
 
           // «ورد التلاوة اليومية» first, then «ورد الحديث اليومي».
-          const QuranWirdCard(),
-          const SizedBox(height: 16),
-          // Extra plans switched on in Settings («تفعيل»), each with its own progress.
+          // Daily-reading plans ticked in Settings, each with its own
+          // progress; «ليس لديك ورد يومي» when there are none.
           const ActivePlanCards(),
           // «الحديث اليومي - التوحيد».
           _HadithOfTheDayCard(

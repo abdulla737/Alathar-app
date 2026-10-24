@@ -11,6 +11,7 @@ import 'content_store.dart';
 import 'prayer_store.dart';
 import 'prayer_times.dart';
 import 'quran.dart';
+import 'reading_plans.dart';
 import 'user_store.dart';
 
 /// Sends what the iPhone widgets show (Lock Screen and Home Screen) to the
@@ -37,6 +38,7 @@ class WidgetSync with WidgetsBindingObserver {
       PrayerStore.instance,
       UserStore.instance,
       QuranStore.instance,
+      PlanStore.instance,
       AppSettings.instance,
       ContentStore.instance,
     ]) {
@@ -57,6 +59,11 @@ class WidgetSync with WidgetsBindingObserver {
     if (!_supported) return;
     _debounce?.cancel();
     _debounce = Timer(const Duration(milliseconds: 800), push);
+  }
+
+  static ReadingPlan? get _firstPlan {
+    final active = PlanStore.instance.activePlans;
+    return active.isEmpty ? null : active.first;
   }
 
   static String _two(int v) => v.toString().padLeft(2, '0');
@@ -95,8 +102,9 @@ class WidgetSync with WidgetsBindingObserver {
       'prayers': prayers,
       'hadith': hadith,
       'hadithDone': hadithDone,
-      'quranRead': QuranStore.instance.pagesReadToday,
-      'quranGoal': AppSettings.instance.quranSidesPerDay,
+      // The home-screen widget shows the first daily-reading plan on Today.
+      'quranRead': _firstPlan == null ? 0 : PlanStore.instance.readToday(_firstPlan!),
+      'quranGoal': _firstPlan?.sidesPerDay ?? 0,
       'labels': {
         'next': S.t('prayer_next'),
         'in': S.t('prayer_in'),

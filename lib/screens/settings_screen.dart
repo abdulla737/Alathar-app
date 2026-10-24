@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 
 import '../data/app_settings.dart';
-import '../data/quran.dart';
 import '../data/content_store.dart';
 import '../data/content_sync.dart';
 import '../data/user_store.dart';
@@ -102,14 +101,6 @@ class SettingsScreen extends StatelessWidget {
             const SizedBox(height: 8),
             _Group(
               children: [
-                _StepperRow(
-                  label: context.tr('wird_quran_pages'),
-                  value: settings.quranPagesPerDay,
-                  min: 1,
-                  max: AppSettings.maxQuranPagesPerDay,
-                  onChanged: settings.setQuranPagesPerDay,
-                ),
-                const _QuranRangeRows(),
                 const ExtraPlansRows(),
               ],
             ),
@@ -316,179 +307,6 @@ class _ContentUpdateRowState extends State<_ContentUpdateRow> {
                         size: 13, weight: FontWeight.w600, color: AppColors.green)),
               ),
       ),
-    );
-  }
-}
-
-/// «أحاديث في اليوم   −  ٣  +»
-class _StepperRow extends StatelessWidget {
-  final String label;
-  final int value;
-  final int min;
-  final int max;
-  final ValueChanged<int> onChanged;
-  const _StepperRow(
-      {required this.label,
-      required this.value,
-      required this.min,
-      required this.max,
-      required this.onChanged});
-
-  @override
-  Widget build(BuildContext context) {
-    Widget button(IconData icon, VoidCallback? onTap) => IconButton.outlined(
-          onPressed: onTap,
-          visualDensity: VisualDensity.compact,
-          style: IconButton.styleFrom(
-            side: BorderSide(color: onTap == null ? AppColors.line : AppColors.green),
-            foregroundColor: AppColors.green,
-          ),
-          icon: Icon(icon, size: 18),
-        );
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-      child: Row(
-        children: [
-          Expanded(
-            child: Text(label, style: AppText.ui(size: 15, weight: FontWeight.w600)),
-          ),
-          button(Icons.remove, value > min ? () => onChanged(value - 1) : null),
-          SizedBox(
-            width: 40,
-            child: Text(S.isArabic ? arabicDigits(value) : '$value',
-                textAlign: TextAlign.center,
-                style: AppText.ui(size: 17, weight: FontWeight.w700, color: AppColors.green)),
-          ),
-          button(Icons.add, value < max ? () => onChanged(value + 1) : null),
-        ],
-      ),
-    );
-  }
-}
-
-/// «ختمة»: days left at the chosen pages per day, and «قراءة ختمة جديدة».
-class _QuranRangeRows extends StatelessWidget {
-  const _QuranRangeRows();
-
-  @override
-  Widget build(BuildContext context) {
-    final settings = AppSettings.instance;
-    final q = QuranData.instance;
-    return FutureBuilder<void>(
-      future: q.ensureLoaded(),
-      builder: (context, _) => ListenableBuilder(
-        // Redraw when pages per day or the khatma progress change.
-        listenable: Listenable.merge([settings, QuranStore.instance]),
-        builder: (context, _) => _rows(context, settings, q),
-      ),
-    );
-  }
-
-  /// Starts the daily reading afresh at the plan's first page.
-  static void _restartWird() {
-    final first = QuranData.instance.pageOf(AppSettings.instance.quranFromSurah, 1);
-    QuranStore.instance.resetWird(first);
-  }
-
-  /// «قراءة ختمة جديدة»: confirm, then start the daily reading afresh from
-  /// al-Fatiha (the Today card «ورد التلاوة اليومية» starts at zero).
-  Future<void> _confirmNewKhatma(BuildContext context) async {
-    final ok = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text(ctx.tr('wird_new_khatma_q'),
-            style: AppText.ui(size: 17, weight: FontWeight.w700)),
-        content: Text(ctx.tr('wird_reset_body'), style: AppText.ui(size: 14, height: 1.6)),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(false),
-            child: Text(ctx.tr('book_cancel'),
-                style: AppText.ui(size: 14, color: AppColors.muted)),
-          ),
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(true),
-            child: Text(ctx.tr('quran_resume_yes'),
-                style: AppText.ui(size: 14, weight: FontWeight.w700, color: AppColors.green)),
-          ),
-        ],
-      ),
-    );
-    if (ok != true) return;
-    AppSettings.instance.setQuranKhatma(true);
-    _restartWird();
-  }
-
-  Widget _rows(BuildContext context, AppSettings settings, QuranData q) {
-    if (!q.isLoaded) return const SizedBox(height: 0);
-    String nn(int n) => S.isArabic ? arabicDigits(n) : '$n';
-
-    // The whole mushaf; how much of this khatma is left, and how many days
-    // that takes at the chosen pages per day.
-    final total = q.pageCount;
-    final done = QuranStore.instance.pagesDone(1, total);
-    final left = total - done;
-    final perDay = settings.quranPagesPerDay; // «صفحة» = 2 sides
-    final sides = settings.quranSidesPerDay;
-    final days = (left / sides).ceil();
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        Padding(
-          padding: const EdgeInsets.fromLTRB(16, 10, 16, 4),
-          child: Row(
-            children: [
-              const Icon(Icons.auto_stories_outlined, color: AppColors.gold, size: 20),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Text(context.tr('wird_khatma'),
-                    style: AppText.ui(size: 15, weight: FontWeight.w600)),
-              ),
-              Text(context.tr('wird_khatma_pages', {'t': nn(total), 'h': nn((total / 2).ceil())}),
-                  style: AppText.ui(size: 13, color: AppColors.muted)),
-            ],
-          ),
-        ),
-        Padding(
-          padding: const EdgeInsets.fromLTRB(16, 2, 16, 10),
-          child: Text(
-              done > 0
-                  ? context.tr('wird_khatma_days_left',
-                      {'d': nn(days), 'r': nn(left), 'p': nn(perDay), 's': nn(sides)})
-                  : context.tr('wird_khatma_days', {'d': nn(days), 'p': nn(perDay), 's': nn(sides)}),
-              style: AppText.ui(size: 13, color: AppColors.gold, weight: FontWeight.w600)),
-        ),
-        // What «صفحة» means: one side of a mushaf leaf.
-        Padding(
-          padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Icon(Icons.info_outline, color: AppColors.muted, size: 16),
-              const SizedBox(width: 6),
-              Expanded(
-                child: Text(context.tr('wird_page_hint'),
-                    style: AppText.ui(size: 12, height: 1.5, color: AppColors.muted)),
-              ),
-            ],
-          ),
-        ),
-        Padding(
-          padding: const EdgeInsets.fromLTRB(16, 0, 16, 14),
-          child: OutlinedButton.icon(
-            onPressed: () => _confirmNewKhatma(context),
-            icon: const Icon(Icons.restart_alt, size: 20),
-            label: Text(context.tr('wird_new_khatma_btn'),
-                style: AppText.ui(size: 15, weight: FontWeight.w700, color: AppColors.green)),
-            style: OutlinedButton.styleFrom(
-              foregroundColor: AppColors.green,
-              side: const BorderSide(color: AppColors.green, width: 1.2),
-              padding: const EdgeInsets.symmetric(vertical: 12),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-            ),
-          ),
-        ),
-      ],
     );
   }
 }

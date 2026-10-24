@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'app_settings.dart';
 import 'quran.dart';
 import 'user_store.dart';
 
@@ -98,6 +99,7 @@ class PlanStore extends ChangeNotifier {
 
   static const _kPlans = 'reading_plans';
   static const _kKahf = 'kahf_pages'; // "YYYY-MM-DD:293,294"
+  static const _kMoved = 'plans_moved_main'; // the old built-in reading moved in
 
   SharedPreferences? _prefs;
   final List<ReadingPlan> plans = [];
@@ -113,6 +115,27 @@ class PlanStore extends ChangeNotifier {
         }
       }
     } catch (_) {}
+    // There is no built-in daily reading any more: someone who used it gets
+    // it as a khatma plan, with its pages per day and progress.
+    if (!(p.getBool(_kMoved) ?? false)) {
+      p.setBool(_kMoved, true);
+      final q = QuranStore.instance;
+      if (plans.isEmpty && q.wirdUsed) {
+        final plan = ReadingPlan(
+          id: 'p_main',
+          kind: PlanKind.khatma,
+          fromSurah: 1,
+          toSurah: 114,
+          pagesPerDay: AppSettings.instance.quranPagesPerDay.clamp(1, maxPagesPerDay),
+          active: true,
+        )
+          ..next = q.wirdNextPage
+          ..furthest = q.pagesDone(1, 604)
+          ..rounds = q.khatmasDone;
+        plans.add(plan);
+        p.setString(_kPlans, jsonEncode([for (final x in plans) x.toJson()]));
+      }
+    }
     final k = p.getString(_kKahf) ?? '';
     final colon = k.indexOf(':');
     if (colon > 0) {
@@ -138,7 +161,7 @@ class PlanStore extends ChangeNotifier {
     return null;
   }
 
-  /// A new plan (not active until «تفعيل»).
+  /// A new plan; it shows on Today straight away (✓ in Settings).
   ReadingPlan add(PlanKind kind, int from, int to, int pagesPerDay) {
     if (kind == PlanKind.khatma) {
       from = 1;
@@ -152,6 +175,7 @@ class PlanStore extends ChangeNotifier {
       fromSurah: from.clamp(1, 114),
       toSurah: to.clamp(from.clamp(1, 114), 114),
       pagesPerDay: pagesPerDay.clamp(1, maxPagesPerDay),
+      active: true,
     );
     plans.add(p);
     _save();

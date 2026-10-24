@@ -402,6 +402,13 @@ class QuranStore extends ChangeNotifier {
     return inRange(_wirdNext) ?? fallback.clamp(from, to);
   }
 
+  /// The old built-in daily reading was used (moved once into a plan).
+  bool get wirdUsed =>
+      _wirdDay.isNotEmpty || _wirdNext != null || _furthest > 0 || khatmasDone > 0;
+
+  /// Where the old built-in daily reading continues.
+  int? get wirdNextPage => _wirdNext;
+
   /// Today's reading has been opened (since the last plan change).
   bool get wirdBegunToday => _wirdDay == _day(DateTime.now());
 

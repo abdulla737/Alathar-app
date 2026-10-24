@@ -40,7 +40,7 @@ class ExtraPlansRows extends StatelessWidget {
               ),
               IconButton.filled(
                 tooltip: context.tr('plan_add'),
-                onPressed: q.isLoaded ? () => _showAddPlan(context) : null,
+                onPressed: q.isLoaded ? () => showAddPlan(context) : null,
                 style: IconButton.styleFrom(
                     backgroundColor: AppColors.green, foregroundColor: Colors.white),
                 icon: const Icon(Icons.add, size: 22),
@@ -56,7 +56,12 @@ class ExtraPlansRows extends StatelessWidget {
           ),
         if (q.isLoaded)
           for (final p in store.plans) _PlanRow(plan: p),
-        if (store.plans.isNotEmpty) const SizedBox(height: 8),
+        if (store.plans.isNotEmpty)
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 2, 16, 12),
+            child: Text(context.tr('plan_show_hint'),
+                style: AppText.ui(size: 12, color: AppColors.muted)),
+          ),
       ],
     );
   }
@@ -104,29 +109,14 @@ class _PlanRow extends StatelessWidget {
               ),
             ),
             const SizedBox(width: 8),
-            plan.active
-                ? OutlinedButton.icon(
-                    onPressed: () => store.setActive(plan.id, false),
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: AppColors.green,
-                      side: const BorderSide(color: AppColors.green),
-                      visualDensity: VisualDensity.compact,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                    ),
-                    icon: const Icon(Icons.check, size: 16),
-                    label: Text(context.tr('plan_active'),
-                        style: AppText.ui(size: 13, weight: FontWeight.w700, color: AppColors.green)),
-                  )
-                : FilledButton(
-                    onPressed: () => store.setActive(plan.id, true),
-                    style: FilledButton.styleFrom(
-                      backgroundColor: AppColors.gold,
-                      visualDensity: VisualDensity.compact,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                    ),
-                    child: Text(context.tr('plan_activate'),
-                        style: AppText.ui(size: 13, weight: FontWeight.w700, color: Colors.white)),
-                  ),
+            // ✓ = shows on Today.
+            Checkbox(
+              value: plan.active,
+              onChanged: (v) => store.setActive(plan.id, v ?? false),
+              activeColor: AppColors.green,
+              side: const BorderSide(color: AppColors.muted, width: 1.5),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
+            ),
           ],
         ),
       ),
@@ -197,7 +187,9 @@ Widget _labelled(String label, Widget child) => Padding(
     );
 
 /// «+»: choose ختمة / سورة / من سورة إلى سورة, and pages per day.
-Future<void> _showAddPlan(BuildContext context) {
+Future<void> showAddPlan(BuildContext context) async {
+  await QuranData.instance.ensureLoaded();
+  if (!context.mounted) return;
   var kind = PlanKind.khatma;
   var from = 1;
   var to = 114;

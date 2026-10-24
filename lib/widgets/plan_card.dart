@@ -4,6 +4,7 @@ import '../data/quran.dart';
 import '../data/reading_plans.dart';
 import '../data/user_store.dart';
 import '../l10n/strings.dart';
+import '../screens/plan_settings.dart' show showAddPlan;
 import '../screens/quran_reader_screen.dart';
 import '../theme/app_theme.dart';
 import 'common.dart';
@@ -26,7 +27,8 @@ String planTitle(BuildContext context, ReadingPlan p) {
   };
 }
 
-/// Today cards for every active extra plan, each followed by a gap.
+/// Today cards for every plan ticked in Settings, each followed by a gap;
+/// with none, a short «ليس لديك ورد يومي» card that adds one.
 class ActivePlanCards extends StatelessWidget {
   const ActivePlanCards({super.key});
 
@@ -38,22 +40,82 @@ class ActivePlanCards extends StatelessWidget {
         if (!QuranData.instance.isLoaded) return const SizedBox(height: 0);
         return ListenableBuilder(
           listenable: PlanStore.instance,
-          builder: (context, _) => Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              for (final p in PlanStore.instance.activePlans) ...[
-                PlanCard(plan: p),
-                const SizedBox(height: 16),
+          builder: (context, _) {
+            final active = PlanStore.instance.activePlans;
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                if (active.isEmpty) ...[
+                  const _NoPlanCard(),
+                  const SizedBox(height: 16),
+                ],
+                for (final p in active) ...[
+                  PlanCard(plan: p),
+                  const SizedBox(height: 16),
+                ],
               ],
-            ],
-          ),
+            );
+          },
         );
       },
     );
   }
 }
 
-/// Today page: one extra plan — today's pages, the plan's own progress,
+/// «ليس لديك ورد يومي» — tap or «أضف وردًا» opens the add-plan sheet.
+class _NoPlanCard extends StatelessWidget {
+  const _NoPlanCard();
+
+  @override
+  Widget build(BuildContext context) {
+    return AppCard(
+      radius: 22,
+      borderColor: AppColors.gold,
+      borderWidth: 1.2,
+      padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
+      onTap: () => showAddPlan(context),
+      child: Row(
+        children: [
+          Container(
+            width: 44,
+            height: 44,
+            decoration:
+                BoxDecoration(color: AppColors.sandSoft, borderRadius: BorderRadius.circular(14)),
+            child: const Icon(Icons.auto_stories_outlined, color: AppColors.goldDark, size: 22),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(context.tr('plan_none_title'),
+                    style: AppText.ui(size: 15, weight: FontWeight.w700)),
+                const SizedBox(height: 2),
+                Text(context.tr('plan_none_body'),
+                    style: AppText.ui(size: 12, height: 1.5, color: AppColors.muted)),
+              ],
+            ),
+          ),
+          const SizedBox(width: 10),
+          FilledButton.icon(
+            onPressed: () => showAddPlan(context),
+            style: FilledButton.styleFrom(
+              backgroundColor: AppColors.green,
+              minimumSize: const Size(0, 44),
+              padding: const EdgeInsets.symmetric(horizontal: 12),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+            ),
+            icon: const Icon(Icons.add, size: 18),
+            label: Text(context.tr('plan_none_btn'),
+                style: AppText.ui(size: 13, weight: FontWeight.w700, color: Colors.white)),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Today page: one plan — today's pages, the plan's own progress,
 /// and a ✓ box once today's pages are read.
 class PlanCard extends StatelessWidget {
   final ReadingPlan plan;
