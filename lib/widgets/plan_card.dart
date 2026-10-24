@@ -76,9 +76,12 @@ class AddPlanStrip extends StatelessWidget {
         if (PlanStore.instance.activePlans.isEmpty) return const SizedBox(height: 0);
         return Padding(
           padding: const EdgeInsets.only(bottom: 16),
+          // Same colours as the «الأمثال في القرآن» card above it.
           child: AppCard(
             radius: 18,
-            borderColor: AppColors.line,
+            color: const Color(0xFFEEF0E2),
+            borderColor: const Color(0xFF5A6B1E),
+            borderWidth: 1.5,
             padding: const EdgeInsets.fromLTRB(14, 10, 14, 10),
             onTap: () => showAddPlan(context),
             child: Row(
@@ -87,8 +90,8 @@ class AddPlanStrip extends StatelessWidget {
                   width: 36,
                   height: 36,
                   decoration:
-                      const BoxDecoration(color: AppColors.greenSoft, shape: BoxShape.circle),
-                  child: const Icon(Icons.add, color: AppColors.green, size: 22),
+                      const BoxDecoration(color: Color(0xFF5A6B1E), shape: BoxShape.circle),
+                  child: const Icon(Icons.add, color: Colors.white, size: 22),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
@@ -96,14 +99,15 @@ class AddPlanStrip extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(context.tr('plan_add_more'),
-                          style: AppText.ui(size: 14, weight: FontWeight.w700, color: AppColors.green)),
+                          style: AppText.ui(
+                              size: 14, weight: FontWeight.w700, color: const Color(0xFF4A5818))),
                       Text(context.tr('plan_add_more_sub'),
-                          style: AppText.ui(size: 12, color: AppColors.muted)),
+                          style: AppText.ui(size: 12, color: const Color(0xFF4F5640))),
                     ],
                   ),
                 ),
                 Icon(S.isRtl ? Icons.chevron_left : Icons.chevron_right,
-                    color: AppColors.green, size: 20),
+                    color: const Color(0xFF4A5818), size: 20),
               ],
             ),
           ),
